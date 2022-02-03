@@ -46,7 +46,7 @@ def predict_summary(
         decoded_sentence
     """
     inputs = tokenizer(
-        [text_to_summarize],
+        text_to_summarize,
         max_length=1024,
         truncation=True,
         return_tensors="pt",
