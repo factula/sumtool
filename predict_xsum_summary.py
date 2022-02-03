@@ -1,17 +1,50 @@
 import argparse
 import torch
 import datasets
+from typing import Tuple
 
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers import BartTokenizer, BartForConditionalGeneration
 
-def load_summarization_model_and_tokenizer(device):
-    tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-xsum")
-    model = AutoModelForSeq2SeqLM.from_pretrained("facebook/bart-large-xsum")
+
+def load_summarization_model_and_tokenizer(
+    device: torch.cuda.Device,
+) -> Tuple[BartForConditionalGeneration, BartTokenizer]:
+    """
+    Load summary generation model and move to GPU, if possible.
+
+    Args:
+        device: cpu or gpu
+
+    Returns:
+        (model, tokenizer)
+    """
+    tokenizer = BartTokenizer.from_pretrained("facebook/bart-large-xsum")
+    model = BartForConditionalGeneration.from_pretrained("facebook/bart-large-xsum")
     model.to(device)
 
     return model, tokenizer
 
-def predict_summary(model, tokenizer, text_to_summarize):
+
+def predict_summary(
+    model: BartForConditionalGeneration,
+    tokenizer: BartTokenizer,
+    text_to_summarize: str,
+) -> str:
+    """
+    Given a trained summary generation model and appropriate tokenizer,
+
+    1. Tokenize text (and move to device, if possible)
+    2. Run inference on model to generate output vocabulary tokens for summary
+    3. Decode tokens to a sentence using the tokenizer
+
+    Args:
+        model: model to run inference on
+        tokenizer: tokenizer corresponding to model
+        text_to_summarize: document to summarize
+
+    Returns:
+        decoded_sentence
+    """
     inputs = tokenizer(
         [text_to_summarize],
         max_length=1024,
@@ -35,7 +68,6 @@ def predict_summary(model, tokenizer, text_to_summarize):
     ]
 
     return predicted_summary[0]
-
 
 
 if __name__ == "__main__":
