@@ -31,12 +31,17 @@ def compile_data():
             'true_summary': true summary (str),
             }
         )
-        val_data: Dict(id, {
+        xsum_train_data: Dict(id, {
+            'document': original document,
+            'summary': generated summary,
+            }
+        )
+        xsum_val_data: Dict(id, {
             'document': original document,
             'summary': true summary,
             }
         )
-        test_data: Dict(id, {
+        xsum_test_data: Dict(id, {
             'document': original document,
             'summary': true summary,
             }
@@ -47,8 +52,9 @@ def compile_data():
     data_xsum_faithfulness = load_dataset("xsum_factuality", "xsum_faithfulness") # bbcid,system,summary,hallucination_type,hallucinated_span,hallucinated_span_start,hallucinated_span_end,worker_id
 
     compiled_train_data = {}
-    val_data = {}
-    test_data = {}
+    xsum_train_data = {}
+    xsum_val_data = {}
+    xsum_test_data = {}
 
     def handle_duplicates(category, new_version, id):
         if (compiled_train_data[id][category] == new_version):
@@ -81,14 +87,15 @@ def compile_data():
         worker_id = fact_d['worker_id']
         if id not in compiled_train_data:
             compiled_train_data[id] = {
-                            'summary': summary, 
+                            # 'summary': summary, 
                             'factuality_data': [],
                             'faithfulness_data': []
             }
-        id = handle_duplicates('summary', summary, id)
+        # id = handle_duplicates('summary', summary, id)
         compiled_train_data[id]['factuality_data'].append(
         {
             'worker_id': worker_id,
+            'summary': summary,
             'is_factual': is_factual,
             'system': system
         })
@@ -106,15 +113,16 @@ def compile_data():
         if id not in compiled_train_data:
             print('(faithfulness) New id: {}; adding it...'.format(id))
             compiled_train_data[id] = {
-                                'summary': summary, 
+                                # 'summary': summary, 
                                 'factuality_data': [],
                                 'faithfulness_data': []
             }
-        id = handle_duplicates('summary', summary, id)
+        # id = handle_duplicates('summary', summary, id)
         compiled_train_data[id]['faithfulness_data'].append(
         {
             'worker_id': worker_id,
             'system': system,
+            'summary': summary,
             'hallucination_type': hallucination_type,
             'hallucinated_span': hallucinated_span,
             'hallucinated_span_start': hallucinated_span_start,
@@ -125,22 +133,20 @@ def compile_data():
         id = xsum_d['id']
         summary = xsum_d['summary']
         document = xsum_d['document']
-        if id not in compiled_train_data:
-            print('(xsum train) New id: {}; adding it...'.format(id))
-            compiled_train_data[id] = {
-                'summary': None, 
-                'factuality_data': [],
-                'faithfulness_data': [],
+        if id not in xsum_train_data:
+            xsum_train_data[id] = {
+                'summary': summary, 
+                'document': document
             }
-        compiled_train_data[id]['true_summary'] = summary
-        compiled_train_data[id]['document'] = document
+            continue
+        print('(xsum train) Duplicate id: {}; adding to it...'.format(id))
 
     for xsum_d in data_xsum['validation']:
         document = xsum_d['document']
         summary = xsum_d['summary']
         id = xsum_d['id']
-        if id not in val_data:
-            val_data[id] = {'summary': summary,
+        if id not in xsum_val_data:
+            xsum_val_data[id] = {'summary': summary,
                             'document': document
             }
             continue
@@ -150,22 +156,18 @@ def compile_data():
         document = xsum_d['document']
         summary = xsum_d['summary']
         id = xsum_d['id']
-        if id not in test_data:
-            test_data[id] = {'summary': summary,
+        if id not in xsum_test_data:
+            xsum_test_data[id] = {'summary': summary,
                             'document': document
             }
             continue
         print('(xsum test) Duplicate id: {}; skipping...'.format(id))
             
-    return compiled_train_data, val_data, test_data
+    return compiled_train_data, xsum_train_data, xsum_val_data, xsum_test_data
 
-compiled_train_data, val_data, test_data = compile_data()
-
-
-# with open('data/compiled_data.csv', 'w') as csvfile:
-#     fieldnames = ['id', 'split', 'system', 'worker_id', 'document', 'summary', 'is_factual', 'hallucination_type', 'hallucinated_span', 'hallucinated_span_start', 'hallucinated_span_end']
-#     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-#     writer.writeheader()
-#     for id, data in compiled_data.items():
-#         data_item = {'id': id, 'split': data['split'], 'system': data['system'], 'worker_id': data['worker_id'], 'document': data['document'], 'summary': data['summary'], 'is_factual': data['is_factual'], 'hallucination_type': data['hallucination_type'], 'hallucinated_span': data['hallucinated_span'], 'hallucinated_span_start': data['hallucinated_span_start'], 'hallucinated_span_end': data['hallucinated_span_end']}
-#         writer.writerow(data_item)
+compiled_train_data, xsum_train_data, xsum_val_data, xsum_test_data = compile_data()
+# TODO
+# issues I see: 
+# spans of hallucinations seem off by one character
+# some summaries are shared across a document and diff worker ids. can/should we collapse them?
+# I think the structure of these dictionaries is far from optimal... think about it as we set up dataloader
