@@ -21,6 +21,7 @@ pip install -r requirements.dev.txt
 Before commiting.
 
 ```
+black sumtool/
 flake8 sumtool/
 ```
 
