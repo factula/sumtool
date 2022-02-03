@@ -168,6 +168,6 @@ def compile_data():
 compiled_train_data, xsum_train_data, xsum_val_data, xsum_test_data = compile_data()
 # TODO
 # issues I see: 
-# spans of hallucinations seem off by one character
-# some summaries are shared across a document and diff worker ids. can/should we collapse them?
+# spans of hallucinations seem off by one character --> one-indexing vs zero-indexing?
+# some summaries are shared across a document and diff worker ids. can/should we collapse them?  --> hypothesis: system and summary are correlated
 # I think the structure of these dictionaries is far from optimal... think about it as we set up dataloader
