@@ -13,7 +13,7 @@ A Study of Summarizing Radiology Reports](https://arxiv.org/pdf/1911.02541.pdf),
 
 - Cao, Meng, et al. [Factual Error Correction for Abstractive Summarization Models](https://arxiv.org/pdf/2010.08712.pdf), Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2020.
 
-- Dou, Zi-Yi, et al. [GSum: A General Framework for Guided Neural Abstractive Summarization](https://arxiv.org/pdf/2010.08014.pdf), Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics, 2021.
+- Dou, Zi-Yi, et al. [GSum: A General Framework for Guided Neural Abstractive Summarization](https://arxiv.org/pdf/2010.08014.pdf), Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics (NAACL), 2021.
 
 ## Survery
 
@@ -23,4 +23,4 @@ A Study of Summarizing Radiology Reports](https://arxiv.org/pdf/1911.02541.pdf),
 
 ## Dataset
 
-- Narayan, Shashi, Shay B. Cohen, and Mirella Lapata. [Don’t Give Me the Details, Just the Summary! Topic-Aware Convolutional Neural Networks for Extreme Summarization](https://arxiv.org/pdf/1808.08745.pdf), Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing, 2018.
+- Narayan, Shashi, Shay B. Cohen, and Mirella Lapata. [Don’t Give Me the Details, Just the Summary! Topic-Aware Convolutional Neural Networks for Extreme Summarization](https://arxiv.org/pdf/1808.08745.pdf), Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2018.
