@@ -9,3 +9,18 @@ pip install -r requirements.txt
 ```
 streamlit run dashboard.py
 ```
+
+
+### Contributors
+
+Setup (python 3.8):
+```
+pip install -r requirements.dev.txt
+```
+
+Before commiting.
+
+```
+flake8 sumtool/
+```
+
