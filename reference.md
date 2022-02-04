@@ -2,23 +2,32 @@
 
 ## Metrics for assessing summarization algorithms/models
 
-- Kryściński, Wojciech, et al. [**Evaluating the Factual Consistency of Abstractive Text Summarization**](https://arxiv.org/pdf/1910.12840.pdf). Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2020.
+- Kryściński, Wojciech, et al. [Evaluating the Factual Consistency of Abstractive Text Summarization](https://arxiv.org/pdf/1910.12840.pdf). Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2020.
 
 - Fabbri, Alexander R., et al. [SummEval: Re-evaluating Summarization Evaluation](https://arxiv.org/pdf/2007.12626.pdf). Transactions of the Association for Computational Linguistics (TACL), 2021.
-
 
 - Wang, Alex, Kyunghyun Cho, and Mike Lewis. [Asking and Answering Questions to Evaluate the Factual Consistency of Summaries](https://arxiv.org/pdf/2004.04228.pdf). Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL), 2020.
 
 - Zhang, Yuhao, et al. [Optimizing the Factual Correctness of a Summary:
 A Study of Summarizing Radiology Reports](https://arxiv.org/pdf/1911.02541.pdf), Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL), 2020.
 
-
 - Cao, Meng, et al. [Factual Error Correction for Abstractive Summarization Models](https://arxiv.org/pdf/2010.08712.pdf), Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2020.
 
 - Dou, Zi-Yi, et al. [GSum: A General Framework for Guided Neural Abstractive Summarization](https://arxiv.org/pdf/2010.08014.pdf), Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics (NAACL), 2021.
 
-- Rahul, Shashi et al.[Focus Attention: Promoting Faithfulness and Diversity in Summarization](http://arXiv/preprint/arXiv:2105.11921), manuscript, 2021
+- Rahul, Shashi et al.[Focus Attention: Promoting Faithfulness and Diversity in Summarization](https://arxiv.org/pdf/2105.11921.pdf), manuscript, 2021
 
+- Elazar, Yanai, et al. [Measuring and improving consistency in pretrained language models](https://arxiv.org/abs/2102.01017), Transactions of the Association for Computational Linguistics (TACL), 2021.
+
+- Pagnoni, Artidoro, Vidhisha Balachandran, and Yulia Tsvetkov. [Understanding Factuality in Abstractive Summarization with FRANK: A Benchmark for Factuality Metrics](https://arxiv.org/pdf/2104.13346.pdf), Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL), 2021.
+
+- Ladhak, Faisal, et al. [Faithful or Extractive? On Mitigating the Faithfulness-Abstractiveness Trade-off in Abstractive Summarization](https://arxiv.org/pdf/2108.13684.pdf).
+
+- Huang, Luyang, et al. [Efficient Attentions for Long Document Summarization](https://arxiv.org/pdf/2104.02112.pdf), Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL), 2021.
+
+- Zhu, Chenguang, et al. [Enhancing Factual Consistency of Abstractive Summarization](https://arxiv.org/pdf/2003.08612.pdf), Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL). 2021.
+
+- Xu, Jiacheng, Shrey Desai, and Greg Durrett. [Understanding Neural Abstractive Summarization Models via Uncertainty](https://arxiv.org/pdf/2010.07882.pdf), Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2020.
 
 ## Survery
 
@@ -29,6 +38,3 @@ A Study of Summarizing Radiology Reports](https://arxiv.org/pdf/1911.02541.pdf),
 ## Dataset
 
 - Narayan, Shashi, Shay B. Cohen, and Mirella Lapata. [Don’t Give Me the Details, Just the Summary! Topic-Aware Convolutional Neural Networks for Extreme Summarization](https://arxiv.org/pdf/1808.08745.pdf), Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2018.
-
-## Connection to Pretrained Models
-- Elazar, Yanai, et al. [Measuring and improving consistency in pretrained language models](https://arxiv.org/abs/2102.01017) Transactions of the Association for Computational Linguistics(TACL), 2021.
