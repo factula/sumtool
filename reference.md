@@ -11,6 +11,9 @@
 - Zhang, Yuhao, et al. [Optimizing the Factual Correctness of a Summary:
 A Study of Summarizing Radiology Reports](https://arxiv.org/pdf/1911.02541.pdf), Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL), 2020.
 
+- Xu, Jiacheng, Shrey Desai, and Greg Durrett. [Understanding Neural Abstractive Summarization Models via Uncertainty](https://arxiv.org/pdf/2010.07882.pdf), Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2020.
+
+
 - Cao, Meng, et al. [Factual Error Correction for Abstractive Summarization Models](https://arxiv.org/pdf/2010.08712.pdf), Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2020.
 
 - Dou, Zi-Yi, et al. [GSum: A General Framework for Guided Neural Abstractive Summarization](https://arxiv.org/pdf/2010.08014.pdf), Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics (NAACL), 2021.
@@ -23,11 +26,16 @@ A Study of Summarizing Radiology Reports](https://arxiv.org/pdf/1911.02541.pdf),
 
 - Ladhak, Faisal, et al. [Faithful or Extractive? On Mitigating the Faithfulness-Abstractiveness Trade-off in Abstractive Summarization](https://arxiv.org/pdf/2108.13684.pdf).
 
+
+## summarization algorithms/models
+
+- Rothe, Sascha, Shashi Narayan, and Aliaksei Severyn. [Leveraging pre-trained checkpoints for sequence generation tasks](https://arxiv.org/pdf/1907.12461.pdf)Transactions of the Association for Computational Linguistics 8 (2020): 264-280.
+
 - Huang, Luyang, et al. [Efficient Attentions for Long Document Summarization](https://arxiv.org/pdf/2104.02112.pdf), Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL), 2021.
 
 - Zhu, Chenguang, et al. [Enhancing Factual Consistency of Abstractive Summarization](https://arxiv.org/pdf/2003.08612.pdf), Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL). 2021.
 
-- Xu, Jiacheng, Shrey Desai, and Greg Durrett. [Understanding Neural Abstractive Summarization Models via Uncertainty](https://arxiv.org/pdf/2010.07882.pdf), Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2020.
+
 
 ## Survery
 
