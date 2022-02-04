@@ -17,7 +17,7 @@ A Study of Summarizing Radiology Reports](https://arxiv.org/pdf/1911.02541.pdf),
 
 - Rahul, Shashi et al.[Focus Attention: Promoting Faithfulness and Diversity in Summarization](https://arxiv.org/pdf/2105.11921.pdf), manuscript, 2021
 
-- Elazar, Yanai, et al. [Measuring and improving consistency in pretrained language models](https://arxiv.org/abs/2102.01017), Transactions of the Association for Computational Linguistics (TACL), 2021.
+- Elazar, Yanai, et al. [Measuring and improving consistency in pretrained language models](https://arxiv.org/pdf/2102.01017.pdf), Transactions of the Association for Computational Linguistics (TACL), 2021.
 
 - Pagnoni, Artidoro, Vidhisha Balachandran, and Yulia Tsvetkov. [Understanding Factuality in Abstractive Summarization with FRANK: A Benchmark for Factuality Metrics](https://arxiv.org/pdf/2104.13346.pdf), Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL), 2021.
 
