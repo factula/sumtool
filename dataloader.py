@@ -1,10 +1,52 @@
 from datasets import load_dataset
+
 import csv
 
 # TODO
 # make a dataloader from the data_xsum: document input, summary output
 # can we make a dataloader that merges all 3 info?
 
+class XsumDatasetHandler():
+
+    def __init__(self):
+        self.__data_xsum = load_dataset("xsum") 
+        self.__data_xsum_factuality = load_dataset("xsum_factuality","xsum_factuality")  # bbcid (int), system (string), summary (string), is_factual (class label), worker_id (string)
+        self.__data_xsum_faithfulness = load_dataset("xsum_factuality","xsum_faithfulness")  # bbcid,system,summary,hallucination_type,hallucinated_span_start,hallucinated_span_end,worker_id
+        self.train_dic = {}
+        self._align_data()
+
+    def _align_data(self):
+        """schema till now:
+        compiled_train_data: Dict(id, {
+            'document': original document,
+            'true_summary': true summary,
+            'factuality_data': []
+            'faithfulness_data':[]
+        )
+        """
+        
+        # TODO confirm the summary in xsum is the true summary
+
+        for data in self.__data_xsum["train"]:
+            self.train_dic[data["id"]] = {"document":data["document"], "true_summary":data["summary"], "factuality_data":[], "faithfulness_data":[]}
+
+        for data in self.__data_xsum_factuality["train"]:
+            if data["bbcid"] in self.train_dic:
+                print("good")
+                self.train_dic[data["bbcid"]]["factuality_data"].append("TODO: append detail here")
+
+        for data in self.__data_xsum_faithfulness["train"]:
+            if data["bbcid"] in self.train_dic:
+                print("good")
+                self.train_dic[data["bbcid"]]["faithfulness_data"].append("TODO: append detail here")
+
+        # print(train_d['34687720'])
+
+
+    
+
+
+XsumDatasetHandler()
 
 def compile_data():
     """Compiles the data from xsum dataset into a single dict.
@@ -166,7 +208,7 @@ def compile_data():
     return compiled_train_data, xsum_train_data, xsum_val_data, xsum_test_data
 
 
-compiled_train_data, xsum_train_data, xsum_val_data, xsum_test_data = compile_data()
+# compiled_train_data, xsum_train_data, xsum_val_data, xsum_test_data = compile_data()
 # TODO
 # issues I see:
 # spans of hallucinations seem off by one character --> one-indexing vs zero-indexing?
