@@ -1,5 +1,5 @@
 from datasets import load_dataset
-
+# import torch.utils.data
 import csv
 
 # TODO
@@ -13,35 +13,76 @@ class XsumDatasetHandler():
         self.__data_xsum_factuality = load_dataset("xsum_factuality","xsum_factuality")  # bbcid (int), system (string), summary (string), is_factual (class label), worker_id (string)
         self.__data_xsum_faithfulness = load_dataset("xsum_factuality","xsum_faithfulness")  # bbcid,system,summary,hallucination_type,hallucinated_span_start,hallucinated_span_end,worker_id
         self.train_dic = {}
+        self.validation_dic = {}
+        self.test_dic = {}
         self._align_data()
 
     def _align_data(self):
-        """schema till now:
-        compiled_train_data: Dict(id, {
+
+        """schema:
+        test_dic: Dict(id, {
             'document': original document,
             'true_summary': true summary,
-            'factuality_data': []
-            'faithfulness_data':[]
+            'factuality_data': [
+                factuality_train_data: Dict(bbcid, {
+                    'system':
+                    'summary':
+                    'is_factual':
+                    *'worker_id':})]
+            'faithfulness_data':[
+                faithfulness_train_data: Dict(bbcid, {
+                    'system':
+                    'hallucination_type':
+                    'hallucinated_span_start':
+                    'hallucinated_span_end':
+                    *'worker_id':})           ]
+            }
+        )
+
+        train_dic: Dict(id, {
+            'document': original document,
+            'true_summary': true summary,
+            }
+        )
+
+        validation_dic: Dict(id, {
+            'document': original document,
+            'true_summary': true summary,
+            }
         )
         """
         
-        # TODO confirm the summary in xsum is the true summary
-
+        """xsum_train_data"""
         for data in self.__data_xsum["train"]:
             self.train_dic[data["id"]] = {"document":data["document"], "true_summary":data["summary"], "factuality_data":[], "faithfulness_data":[]}
 
+        """xsum_validation_data"""
+        for data in self.__data_xsum["validation"]:
+            self.validation_dic[data["id"]] = {"document":data["document"], "true_summary":data["summary"], "factuality_data":[], "faithfulness_data":[]}
+
+
+        """xsum_test_data"""
+        for data in self.__data_xsum["test"]:
+            self.test_dic[data["id"]] = {"document":data["document"], "true_summary":data["summary"], "factuality_data":[], "faithfulness_data":[]}
+
+
         for data in self.__data_xsum_factuality["train"]:
-            if data["bbcid"] in self.train_dic:
-                print("good")
-                self.train_dic[data["bbcid"]]["factuality_data"].append("TODO: append detail here")
+            self.test_dic[str(data["bbcid"])]["factuality_data"].append({"system":data["system"], 
+                                                                        "summary":data["summary"], 
+                                                                     "is_factual":data["is_factual"],
+                                                                     "worker_id":data["worker_id"]})
 
         for data in self.__data_xsum_faithfulness["train"]:
-            if data["bbcid"] in self.train_dic:
-                print("good")
-                self.train_dic[data["bbcid"]]["faithfulness_data"].append("TODO: append detail here")
+            self.test_dic[str(data["bbcid"])]["faithfulness_data"].append({"system":data["system"], 
+                                                                        "hallucination_type":data["hallucination_type"], 
+                                                                     "hallucinated_span_start":data["hallucinated_span_start"],
+                                                                     "hallucinated_span_end":data["hallucinated_span_end"],
+                                                                     "worker_id":data["worker_id"]})
 
-        # print(train_d['34687720'])
+        print(self.test_dic['34687720'])
 
+        #TODO 1. check format
+        #TODO 2. check spelling and rename variables if ambiguious
 
     
 
