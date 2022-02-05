@@ -1,257 +1,140 @@
 from datasets import load_dataset
-# import torch.utils.data
+from torch.utils.data import Dataset, DataLoader
 import csv
 
-# TODO
-# make a dataloader from the data_xsum: document input, summary output
-# can we make a dataloader that merges all 3 info?
 
-class XsumDatasetHandler():
+class XsumDataset(Dataset):
+    def __init__(self, xsum_data, factuality_data=None, faithfulness_data=None):
+        self.xsum_data = xsum_data
+        self.factuality_data = factuality_data
+        self.faithfulness_data = faithfulness_data
 
-    def __init__(self):
-        self.__data_xsum = load_dataset("xsum") 
-        self.__data_xsum_factuality = load_dataset("xsum_factuality","xsum_factuality")  # bbcid (int), system (string), summary (string), is_factual (class label), worker_id (string)
-        self.__data_xsum_faithfulness = load_dataset("xsum_factuality","xsum_faithfulness")  # bbcid,system,summary,hallucination_type,hallucinated_span_start,hallucinated_span_end,worker_id
-        self.train_dic = {}
-        self.validation_dic = {}
-        self.test_dic = {}
-        self._align_data()
+        self.dataset = list(self._align_data().items())
 
     def _align_data(self):
-
-        """schema:
-        test_dic: Dict(id, {
-            'document': original document,
-            'true_summary': true summary,
-            'factuality_data': [
-                factuality_train_data: Dict(bbcid, {
-                    'system':
-                    'summary':
-                    'is_factual':
-                    *'worker_id':})]
-            'faithfulness_data':[
-                faithfulness_train_data: Dict(bbcid, {
-                    'system':
-                    'hallucination_type':
-                    'hallucinated_span_start':
-                    'hallucinated_span_end':
-                    *'worker_id':})           ]
+        """Aligns data in xsum, factuality, and faithfulness datasets:
+        Returns:
+            dataset:  Dict(id, {
+                'document': original document,
+                'true_summary': true summary,
+                'factuality_data': Dict(system name, {
+                    'summary': system summary,
+                    'labels': Dict(worker_id: is_factual)
+                },
+                'faithfulness_data':[
+                    Dict(system name: {
+                        'summary': system summary,
+                        'hallucinations': Dict(worker_id, {
+                            'hallucination_type': hallucination type,
+                            'hallucinated_span': hallucinated span,
+                            'hallucinated_span_start': hallucinated span start,
+                            'hallucinated_span_end': hallucinated span end
+                        })
+                    }
+                ]
             }
         )
 
-        train_dic: Dict(id, {
-            'document': original document,
-            'true_summary': true summary,
-            }
-        )
-
-        validation_dic: Dict(id, {
-            'document': original document,
-            'true_summary': true summary,
-            }
-        )
         """
-        
-        """xsum_train_data"""
-        for data in self.__data_xsum["train"]:
-            self.train_dic[data["id"]] = {"document":data["document"], "true_summary":data["summary"], "factuality_data":[], "faithfulness_data":[]}
 
-        """xsum_validation_data"""
-        for data in self.__data_xsum["validation"]:
-            self.validation_dic[data["id"]] = {"document":data["document"], "true_summary":data["summary"], "factuality_data":[], "faithfulness_data":[]}
+        dataset = {}
 
-
-        """xsum_test_data"""
-        for data in self.__data_xsum["test"]:
-            self.test_dic[data["id"]] = {"document":data["document"], "true_summary":data["summary"], "factuality_data":[], "faithfulness_data":[]}
-
-
-        for data in self.__data_xsum_factuality["train"]:
-            self.test_dic[str(data["bbcid"])]["factuality_data"].append({"system":data["system"], 
-                                                                        "summary":data["summary"], 
-                                                                     "is_factual":data["is_factual"],
-                                                                     "worker_id":data["worker_id"]})
-
-        for data in self.__data_xsum_faithfulness["train"]:
-            self.test_dic[str(data["bbcid"])]["faithfulness_data"].append({"system":data["system"], 
-                                                                        "hallucination_type":data["hallucination_type"], 
-                                                                     "hallucinated_span_start":data["hallucinated_span_start"],
-                                                                     "hallucinated_span_end":data["hallucinated_span_end"],
-                                                                     "worker_id":data["worker_id"]})
-
-        print(self.test_dic['34687720'])
-
-        #TODO 1. check format
-        #TODO 2. check spelling and rename variables if ambiguious
-
-    
-
-
-XsumDatasetHandler()
-
-def compile_data():
-    """Compiles the data from xsum dataset into a single dict.
-    Returns:
-        compiled_train_data: Dict(id, {
-            'document': original document,
-            'summary': generated summary,
-            'factuality_data': [
-                {
-                    'worker_id': worker_id (str),
-                    'is_factual': is_factual (bool),
-                    'system': system (str),
-                }
-            ],
-            'faithfulness_data': [
-                {
-                    'worker_id': worker_id (str),
-                    'system': system (str),
-                    'hallucination_type': hallucination_type (str),
-                    'hallucinated_span': hallucinated_span (str),
-                    'hallucinated_span_start': hallucinated_span_start (int),
-                    'hallucinated_span_end': hallucinated_span_end (int),
-                }
-            ],
-            'true_summary': true summary (str),
+        for data in self.xsum_data:
+            dataset[str(data["id"])] = {
+                "document": data["document"],
+                "true_summary": data["summary"],
+                "factuality_data": {},
+                "faithfulness_data": {},
             }
-        )
-        xsum_train_data: Dict(id, {
-            'document': original document,
-            'summary': generated summary,
-            }
-        )
-        xsum_val_data: Dict(id, {
-            'document': original document,
-            'summary': true summary,
-            }
-        )
-        xsum_test_data: Dict(id, {
-            'document': original document,
-            'summary': true summary,
-            }
-        )
-    """
-    data_xsum = load_dataset("xsum")  # document (string), summary (string), id (string)
-    data_xsum_factuality = load_dataset(
-        "xsum_factuality"
-    )  # bbcid (int), system (string), summary (string), is_factual (class label), worker_id (string)
-    data_xsum_faithfulness = load_dataset(
-        "xsum_factuality", "xsum_faithfulness"
-    )  # bbcid,system,summary,hallucination_type,hallucinated_span_start,hallucinated_span_end,worker_id
 
-    compiled_train_data = {}
-    xsum_train_data = {}
-    xsum_val_data = {}
-    xsum_test_data = {}
-
-    def handle_duplicates(category, new_version, id):
-        if compiled_train_data[id][category] == new_version:
-            return id
-        print("Duplicate id: {}; {} does not match!".format(id, category))
-        i = 0
-        while True:
-            if id + "_dup" + str(i) in compiled_train_data:
-                if compiled_train_data[id + "_dup" + str(i)][category] == new_version:
-                    print("Duplicate id: {}; adding to it...".format(id))
-                    return id
+        if self.factuality_data is not None:
+            for data in self.factuality_data:
+                if str(data["bbcid"]) not in dataset:
+                    dataset[str(data["bbcid"])] = {
+                        "document": None,
+                        "true_summary": None,
+                        "factuality_data": {},
+                        "faithfulness_data": {},
+                    }
+                if data["system"] in dataset[str(data["bbcid"])]["factuality_data"]:
+                    dataset[str(data["bbcid"])]["factuality_data"][data["system"]][
+                        "labels"
+                    ][str(data["worker_id"])] = data["is_factual"]
                 else:
-                    print("Duplicate id: {}; {} does not match!".format(id, category))
-                    i += 1
-            else:
-                id = id + "_dup" + str(i)
-                print("New id: {}; adding it...".format(id))
-                compiled_train_data[id] = {
-                    "summary": summary,
-                    "factuality_data": [],
-                    "faithfulness_data": [],
-                }
-                return id
+                    dataset[str(data["bbcid"])]["factuality_data"][data["system"]] = {
+                            "summary": data["summary"],
+                            "labels": {data["worker_id"]: data["is_factual"]},
+                        }
+                    
+        if self.faithfulness_data is not None:
+            for data in self.faithfulness_data:
+                if str(data["bbcid"]) not in dataset:
+                    dataset[str(data["bbcid"])] = {
+                        "document": None,
+                        "true_summary": None,
+                        "factuality_data": {},
+                        "faithfulness_data": {},
+                    }
+                if data["system"] in dataset[str(data["bbcid"])]["faithfulness_data"]:
+                    dataset[str(data["bbcid"])]["faithfulness_data"][data["system"]][str(data["worker_id"])] = {
+                        "hallucination_type": data["hallucination_type"],
+                        "hallucinated_span": data["summary"][
+                            data["hallucinated_span_start"] : data[
+                                "hallucinated_span_end"
+                            ]
+                        ],
+                        "hallucinated_span_start": data["hallucinated_span_start"],
+                        "hallucinated_span_end": data["hallucinated_span_end"],
+                    }
+                else:
+                    dataset[str(data["bbcid"])]["faithfulness_data"][data["system"]] = {
+                        str(data["worker_id"]): {
+                            "hallucination_type": data["hallucination_type"],
+                            "hallucinated_span": data["summary"][
+                                data["hallucinated_span_start"] : data[
+                                    "hallucinated_span_end"
+                                ]
+                            ],
+                            "hallucinated_span_start": data["hallucinated_span_start"],
+                            "hallucinated_span_end": data["hallucinated_span_end"],
+                        }
+                    }
+        return dataset
 
-    for fact_d in data_xsum_factuality["train"]:
-        id = str(fact_d["bbcid"])
-        system = fact_d["system"]
-        summary = fact_d["summary"]
-        is_factual = fact_d["is_factual"]
-        worker_id = fact_d["worker_id"]
-        if id not in compiled_train_data:
-            compiled_train_data[id] = {
-                # 'summary': summary,
-                "factuality_data": [],
-                "faithfulness_data": [],
-            }
-        # id = handle_duplicates('summary', summary, id)
-        compiled_train_data[id]["factuality_data"].append(
-            {
-                "worker_id": worker_id,
-                "summary": summary,
-                "is_factual": is_factual,
-                "system": system,
-            }
-        )
+    def __len__(self):
+        return len(self.dataset)
 
-    for faith_d in data_xsum_faithfulness["train"]:
-        # id,system,summary,hallucination_type,hallucinated_span_start,hallucinated_span_end,worker_id
-        id = str(faith_d["bbcid"])
-        system = faith_d["system"]
-        summary = faith_d["summary"]
-        hallucination_type = faith_d["hallucination_type"]
-        hallucinated_span_start = faith_d["hallucinated_span_start"]
-        hallucinated_span_end = faith_d["hallucinated_span_end"]
-        hallucinated_span = summary[hallucinated_span_start:hallucinated_span_end]
-        worker_id = faith_d["worker_id"]
-        if id not in compiled_train_data:
-            print("(faithfulness) New id: {}; adding it...".format(id))
-            compiled_train_data[id] = {
-                # 'summary': summary,
-                "factuality_data": [],
-                "faithfulness_data": [],
-            }
-        # id = handle_duplicates('summary', summary, id)
-        compiled_train_data[id]["faithfulness_data"].append(
-            {
-                "worker_id": worker_id,
-                "system": system,
-                "summary": summary,
-                "hallucination_type": hallucination_type,
-                "hallucinated_span": hallucinated_span,
-                "hallucinated_span_start": hallucinated_span_start,
-                "hallucinated_span_end": hallucinated_span_end,
-            }
-        )
-
-    for xsum_d in data_xsum["train"]:
-        id = xsum_d["id"]
-        summary = xsum_d["summary"]
-        document = xsum_d["document"]
-        if id not in xsum_train_data:
-            xsum_train_data[id] = {"summary": summary, "document": document}
-            continue
-        print("(xsum train) Duplicate id: {}; adding to it...".format(id))
-
-    for xsum_d in data_xsum["validation"]:
-        document = xsum_d["document"]
-        summary = xsum_d["summary"]
-        id = xsum_d["id"]
-        if id not in xsum_val_data:
-            xsum_val_data[id] = {"summary": summary, "document": document}
-            continue
-        print("(xsum val) Duplicate id: {}; skipping...".format(id))
-
-    for xsum_d in data_xsum["test"]:
-        document = xsum_d["document"]
-        summary = xsum_d["summary"]
-        id = xsum_d["id"]
-        if id not in xsum_test_data:
-            xsum_test_data[id] = {"summary": summary, "document": document}
-            continue
-        print("(xsum test) Duplicate id: {}; skipping...".format(id))
-
-    return compiled_train_data, xsum_train_data, xsum_val_data, xsum_test_data
+    def __getitem__(self, idx):
+        return self.dataset[idx]
 
 
-# compiled_train_data, xsum_train_data, xsum_val_data, xsum_test_data = compile_data()
+data_xsum = load_dataset("xsum")  # document (string), summary (string), id (string)
+data_xsum_factuality = load_dataset(
+    "xsum_factuality"
+)  # bbcid (int), system (string), summary (string), is_factual (class label), worker_id (string)
+data_xsum_faithfulness = load_dataset(
+    "xsum_factuality", "xsum_faithfulness"
+)  # bbcid,system,summary,hallucination_type,hallucinated_span_start,hallucinated_span_end,worker_id
+
+train_data = XsumDataset(
+    data_xsum["train"], data_xsum_factuality["train"], data_xsum_faithfulness["train"]
+)
+val_data = XsumDataset(data_xsum["validation"])
+test_data = XsumDataset(data_xsum["test"])
+
+train_dl = DataLoader(train_data, batch_size=4, shuffle=False)
+val_dl = DataLoader(val_data, batch_size=4, shuffle=False)
+test_dl = DataLoader(test_data, batch_size=4, shuffle=False)
+
+for item in train_dl:
+    print(item)
+    break
+
+
+for item in val_dl:
+    print(item)
+    break
+
 # TODO
 # issues I see:
 # spans of hallucinations seem off by one character --> one-indexing vs zero-indexing?
-# some summaries are shared across a document and diff worker ids. can/should we collapse them?  --> hypothesis: system and summary are correlated
-# I think the structure of these dictionaries is far from optimal... think about it as we set up dataloader
