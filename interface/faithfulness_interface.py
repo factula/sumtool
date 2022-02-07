@@ -96,8 +96,8 @@ def annotation_color(feats, max_count=3):
     def cssify(t):
         return f'rgba({int(t[0])}, {int(t[1])}, {int(t[2])}, {t[3]})'
     ann_colors = {
-        0: (26, 133, 255),
-        1: (212, 17, 89),
+        1: (26, 133, 255),
+        0: (212, 17, 89),
     }
     tag_avg = [int(i[0]) for i in feats]
     tag_avg = sum(tag_avg)/len(tag_avg)
@@ -116,13 +116,13 @@ def render_faithfulness_interface():
 
     annotated_text.annotated_text(
         *annotation_render(
-            [['Hallucination type 0 (false) looks like this.', {(0,'1')}]],
+            [['Hallucination type 0 (factual) looks like this.', {(0,'1')}]],
             annotation_text, annotation_color, max_count=1
         )
     )
     annotated_text.annotated_text(
         *annotation_render(
-            [['Hallucination type 1 (factual) looks like this.', {(1,'1')}]],
+            [['Hallucination type 1 (false) looks like this.', {(1,'1')}]],
             annotation_text, annotation_color, max_count=1
         )
     )
@@ -140,11 +140,11 @@ def render_faithfulness_interface():
         # bbcid, system, summary, hallucination_type,
         # hallucinated_span_start, hallucinated_span_end, worker_id
         st.write(f'**{g_model}:**')
-        if g_model!='Gold':
-            g_factuality = selected_factuality[
-                selected_factuality['system']==g_model
-            ].iloc[0]['mean_worker_factuality_score']
-            st.write(f'mean_worker_factuality_score={str(g_factuality)}')
+        # if g_model!='Gold':
+        #     g_factuality = selected_factuality[
+        #         selected_factuality['system']==g_model
+        #     ].iloc[0]['mean_worker_factuality_score']
+        #     st.write(f'mean_worker_factuality_score={str(g_factuality)}')
         # st.write(g_annotations)
         ann = [[g_summary, set()]]
         for _, r in g_annotations[
