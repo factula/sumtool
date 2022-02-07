@@ -121,6 +121,8 @@ def render_faithfulness_interface():
     # st.write(selected_data['ground_truth_summary'])
 
     # summarize annotations for each model summary
+    # TODO present these in an ordered way
+    # TODO add checkboxes for which workers to include???
     for (g_model, g_summary), g_annotations in selected_annotations.groupby(['system', 'summary']):
         # fields in annotations df:
         # bbcid, system, summary, hallucination_type,
@@ -147,6 +149,7 @@ def render_faithfulness_interface():
             *annotation_render(ann, annotation_text, annotation_color)
         )
 
+    # TODO combine factuality together with the highlights
     st.write("**Factuality Annotations:**")
     st.table(selected_data["factuality"])
 
