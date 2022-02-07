@@ -111,6 +111,7 @@ class XsumDataset(Dataset):
         return self.dataset[idx]
 
 
+"""
 data_xsum = load_dataset("xsum")  # document (string), summary (string), id (string)
 data_xsum_factuality = load_dataset(
     "xsum_factuality", "xsum_factuality"
@@ -145,3 +146,4 @@ for _, item in enumerate(compiled_data):
     pprint.PrettyPrinter(indent=4).pprint(item)
     if len(item["factuality_data"]) > 0:
         break
+"""
