@@ -33,7 +33,7 @@ pip install -r requirements.dev.txt
 Before commiting.
 
 ```
-black sumtool/
-flake8 sumtool/
+black sumtool/ interface/
+flake8 sumtool/ interface/
 ```
 
