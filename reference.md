@@ -30,7 +30,7 @@ A Study of Summarizing Radiology Reports](https://arxiv.org/pdf/1911.02541.pdf),
 
 - Narayan, Shashi, Shay B. Cohen, and Mirella Lapata. [Don’t Give Me the Details, Just the Summary! Topic-Aware Convolutional Neural Networks for Extreme Summarization](https://arxiv.org/pdf/1808.08745.pdf), Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing (EMNLP), 2018.
 
-- Maynez, Joshua, Shashi Narayan and Bernd Bohnet and Ryan Thomas Mcdonald [On Faithfulness and Factuality in Abstractive Summarization](https://arxiv.org/abs/2005.00661), Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, 2018
+- Maynez, Joshua, Shashi Narayan and Bernd Bohnet and Ryan Thomas Mcdonald [On Faithfulness and Factuality in Abstractive Summarization](https://arxiv.org/abs/2005.00661), Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, 2020
 
 ## Connection to Pretrained Models
 - Elazar, Yanai, et al. [Measuring and improving consistency in pretrained language models](https://arxiv.org/abs/2102.01017) Transactions of the Association for Computational Linguistics(TACL), 2021.
