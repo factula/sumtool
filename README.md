@@ -1,4 +1,11 @@
-# summary-analysis
+# sumtool
+
+## References
+
+[References](reference.md)
+
+
+## Setup
 
 Setup (python 3.8):
 ```
