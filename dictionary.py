@@ -70,21 +70,49 @@ class Dictionary:
             return self.get_unk_wrd()
         return self.idx_to_wrd[idx]
 
+    def get_wrd_by_idx_multiple(self, idx_tuple):
+        """
+        Return the word tuple of the given indices
+
+        Args:
+          idx_tuple: A tuple of indices
+
+        Returns:
+          A tuple of corresponding words, <unk> symbol if index does not exist else the word of the given index
+
+        """
+
+        return tuple(map(self.get_wrd_by_idx, idx_tuple))
+
     def get_idx_by_wrd(self, wrd):
         """
         Return the index of the given word
 
         Args:
-          wrd: A string, the word of the given index
+          wrd: A string, the word
 
         Returns:
-          An integer, -1 if word does not exist else the index of the word
+          An integer, get_unk_id() if word does not exist else the index of the word
 
         """
 
         if wrd not in self.wrd_to_idx:
             return self.get_unk_id()
         return self.wrd_to_idx[wrd]
+
+    def get_idx_by_wrd_multiple(self, wrd_tuple):
+        """
+        Return the index tuple of the given word tuple
+
+        Args:
+          wrd_tuple: A tuple of words
+
+        Returns:
+          A tuple of corresponding indices
+
+        """
+
+        return tuple(map(self.get_idx_by_wrd, wrd_tuple))
 
     def get_num_of_words(self):
         """

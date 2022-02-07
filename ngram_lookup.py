@@ -32,7 +32,6 @@ def preprocess(text):  # TODO: replace it with tokenizer
 class NgramLookup:
     def __init__(self, documents, ids):
         """
-
         Args:
             documents: A list, list of documents to build ngram upon
             ids:
@@ -73,9 +72,7 @@ class NgramLookup:
         for id, doc in tqdm(zip(self.ids, self.documents)):
             words = doc.strip().split()
             for ngram in zip(words, words[1:], words[2:]):  # TODO: other than n=3
-                ngram_idx = tuple(
-                    map(self.dictionary.get_idx_by_wrd, ngram)
-                )  # TODO: fix dictionary.py
+                ngram_idx = self.dictionary.get_idx_by_wrd_multiple(ngram)
                 ngram_to_idx_set[ngram_idx].add(id)  # TODO: add idx instead of doc id
 
         self.ngrams_root[n] = ngram_to_idx_set
@@ -84,14 +81,13 @@ class NgramLookup:
         """
 
         Args:
-            query_wrd:
+            query_wrd: A tuple of query words
 
         Returns:
+            A set of matched document ids, empty set if no match
 
         """
-        query_idx = tuple(
-            map(ngram_lookup.dictionary.get_idx_by_wrd, query_wrd)
-        )  # TODO: fix dictionary.py
+        query_idx = self.dictionary.get_idx_by_wrd_multiple(query_wrd)
         return self.ngrams_root[N][query_idx]
 
     # TODO: too slow, use in each document?
@@ -119,11 +115,9 @@ class NgramLookup:
         for doc in tqdm(self.documents):
             words = doc.strip().split()
             # new code
-            for trigram in zip(words, words[1:], words[2:]):  # TODO: other than n=3
-                trigram_idx = [
-                    self.dictionary.get_idx_by_wrd(wrd) for wrd in trigram
-                ]  # TODO: fix dictionary.py
-                trie.add_ngram(trigram_idx)  # trigram_idx should be index
+            for ngram in zip(words, words[1:], words[2:]):  # TODO: other than n=3
+                ngram_idx = list(self.dictionary.get_idx_by_wrd_multiple(ngram))
+                trie.add_ngram(ngram_idx)  # trigram_idx should be index
 
             # original code
             # ngram = [] # [start_id]
@@ -174,11 +168,11 @@ if __name__ == "__main__":
     ngram_lookup.build_dictionary()
 
     # query
-    query = str(input("Enter query (3 words): "))
-    query_wrd = preprocess(query).strip().split()
+    query = str(input("Enter query (3 words): "))  # TODO: now only 3
+    query_wrd = tuple(preprocess(query).strip().split())
 
     # define N
-    N = len(query_wrd)  # TODO: now only 3
+    N = len(query_wrd)
 
     # build ngram
     ngram_lookup.build_ngrams(n=N)
