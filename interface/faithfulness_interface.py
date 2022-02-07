@@ -1,7 +1,7 @@
 import streamlit as st
+import annotated_text
 import pandas as pd
 from backend.viz_data_loader import load_annotated_data_by_id
-import annotated_text
 
 @st.experimental_memo
 def cache_load_annotated_data_by_id():
@@ -79,9 +79,9 @@ def annotation_merge(ann):
             new_ann.append(a)
     return new_ann
 
-def annotation_render(ann, func_text, func_color):
+def annotation_render(ann, func_text, func_color, max_count=3):
     return [
-        (e[0]) if (len(e[1])==0) else (e[0], func_text(e[1]), func_color(e[1]))
+        (e[0]) if (len(e[1])==0) else (e[0], func_text(e[1]), func_color(e[1],max_count=max_count))
         for e in ann
     ]
 
@@ -89,17 +89,24 @@ def annotation_text(feats):
     # Assume from the XSum data that there are up to 3 workers, with tags of 0/1
     tag_avg = [int(i[0]) for i in feats]
     tag_avg = sum(tag_avg)/len(tag_avg)
-    return str(int(tag_avg))
+    return f'{str(tag_avg)[:3]}:{len(feats)}'
 
-def annotation_color(feats):
+def annotation_color(feats, max_count=3):
     # Assume from the XSum data that there are up to 3 workers, with tags of 0/1
+    def cssify(t):
+        return f'rgba({int(t[0])}, {int(t[1])}, {int(t[2])}, {t[3]})'
     ann_colors = {
-        0: '#5d5',
-        1: '#55d'
+        0: (26, 133, 255),
+        1: (212, 17, 89),
     }
     tag_avg = [int(i[0]) for i in feats]
     tag_avg = sum(tag_avg)/len(tag_avg)
-    return ann_colors[int(tag_avg)]
+    return cssify((
+        (tag_avg)*ann_colors[0][0]+(1-tag_avg)*ann_colors[1][0],
+        (tag_avg)*ann_colors[0][1]+(1-tag_avg)*ann_colors[1][1],
+        (tag_avg)*ann_colors[0][2]+(1-tag_avg)*ann_colors[1][2],
+        len(feats)/max_count
+    ))
 
 def render_faithfulness_interface():
     st.header("XSUM with Faithfulness Annotations")
@@ -107,18 +114,23 @@ def render_faithfulness_interface():
     st.write(f"**# of Annotated summaries:** {len(annotated_data_by_id)}")
     selected_id = str(st.selectbox("Select entry by bbcid", options=annotated_data_by_id.keys()))
 
-    st.write("Hallucinations in document summarization.")
-    st.write("Hallucination type 0 looks like this.")
-    st.write("Hallucination type 1 looks like this.")
+    annotated_text.annotated_text(
+        *annotation_render(
+            [['Hallucination type 0 (false) looks like this.', {(0,'1')}]],
+            annotation_text, annotation_color, max_count=1
+        )
+    )
+    annotated_text.annotated_text(
+        *annotation_render(
+            [['Hallucination type 1 (factual) looks like this.', {(1,'1')}]],
+            annotation_text, annotation_color, max_count=1
+        )
+    )
+    st.write('')
 
     selected_data = annotated_data_by_id[selected_id]
     selected_annotations = pd.DataFrame(selected_data['faithfulness'])
-
-    st.write("**Document:**")
-    st.write(selected_data['document'])
-
-    # st.write("**Ground Truth Summary:**")
-    # st.write(selected_data['ground_truth_summary'])
+    selected_factuality = pd.DataFrame(selected_data['factuality'])
 
     # summarize annotations for each model summary
     # TODO present these in an ordered way
@@ -127,10 +139,13 @@ def render_faithfulness_interface():
         # fields in annotations df:
         # bbcid, system, summary, hallucination_type,
         # hallucinated_span_start, hallucinated_span_end, worker_id
-        st.write(f'***{g_model}:***')
-        st.write(g_annotations[[
-            'hallucination_type', 'hallucinated_span_start', 'hallucinated_span_end', 'worker_id'
-        ]])
+        st.write(f'**{g_model}:**')
+        if g_model!='Gold':
+            g_factuality = selected_factuality[
+                selected_factuality['system']==g_model
+            ].iloc[0]['mean_worker_factuality_score']
+            st.write(f'mean_worker_factuality_score={str(g_factuality)}')
+        # st.write(g_annotations)
         ann = [[g_summary, set()]]
         for _, r in g_annotations[
             g_annotations['hallucination_type']!=-1
@@ -141,17 +156,23 @@ def render_faithfulness_interface():
             ann = annotation_overlap(ann,
                 h_begin,
                 h_end,
-                # (r['hallucination_type'],r['worker_id']),
-                (r['hallucination_type'],),
+                (r['hallucination_type'],r['worker_id']),
+                # (r['hallucination_type'],),
             )
         ann = annotation_merge(ann)
         annotated_text.annotated_text(
-            *annotation_render(ann, annotation_text, annotation_color)
+            *annotation_render(ann, annotation_text, annotation_color, max_count=3)
         )
+        st.write('')
 
-    # TODO combine factuality together with the highlights
-    st.write("**Factuality Annotations:**")
-    st.table(selected_data["factuality"])
+    st.write("**Document:**")
+    st.write(selected_data['document'])
+
+    # st.write("**Ground Truth Summary:**")
+    # st.write(selected_data['ground_truth_summary'])
+
+    st.write("**Faithfulness Annotation source data:**")
+    st.write(selected_annotations)
 
 if __name__ == "__main__":
     render_hallucination_interface()
