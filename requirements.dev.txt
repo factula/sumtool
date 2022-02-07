@@ -1,0 +1,4 @@
+black
+darglint
+flake8
+pep8-naming
