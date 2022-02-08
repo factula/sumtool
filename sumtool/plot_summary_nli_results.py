@@ -27,12 +27,14 @@ def get_xsum_datapoints(n: int = 1000, shuffle: bool = False) -> Dict[str, List[
 
     Args:
         n (int): number of datapoints to return
+        shuffle: (bool) whether to shuffle dataset
 
-    Returns: {
-        'document': List[str] of original documents from xsum data
-        'summary': List[str] of ground-truth summaries from xsum data
-        'auto_summary': List[str] of machine-written summaries for documents
-    }
+    Returns:
+        {
+            'document': List[str] of original documents from xsum data
+            'summary': List[str] of ground-truth summaries from xsum data
+            'auto_summary': List[str] of machine-written summaries for documents
+        }
     """
     summarizer = pipeline(
         "summarization", model="t5-base", tokenizer="t5-base", device=0
@@ -79,14 +81,16 @@ def get_entailment_label_from_model(
 
 def plot_nli_data(xsum_train: Dict[str, List[str]]):
     """Creates a plot showing the frequencies of each NLI label in human-written and machine-written summaries.
+
     Args:
-        xsum_train: {
-            'document': List[str] of original documents from xsum data
-            'summary': List[str] of ground-truth summaries from xsum data
-            'auto_summary': List[str] of machine-written summaries for documents
-            'nli_label': List[int] of labels for ground-truth summaries
-            'auto_nli_label': List[int] of labels for machine-written summaries
-        }
+        xsum_train: a Dict[str, List[str]] with the following structure
+            {
+                'document': List[str] of original documents from xsum data
+                'summary': List[str] of ground-truth summaries from xsum data
+                'auto_summary': List[str] of machine-written summaries for documents
+                'nli_label': List[int] of labels for ground-truth summaries
+                'auto_nli_label': List[int] of labels for machine-written summaries
+            }
     """
     #
     # Create dataframe with all this stuff
