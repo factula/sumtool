@@ -1,16 +1,11 @@
 import string
 import regex as rx
 
-from collections import defaultdict  # set
-
+from collections import defaultdict
 from datasets import load_dataset
-from tqdm import tqdm  # progress
+from tqdm import tqdm  # progress bar
 
 from dictionary import Dictionary
-from trie import Trie
-
-TMP_LEN = 100
-N = 3
 
 
 def preprocess(text):  # TODO: replace it with tokenizer
@@ -21,7 +16,9 @@ def preprocess(text):  # TODO: replace it with tokenizer
     out = out.lower()
 
     # remove punctuation
-    out = out.translate(str.maketrans("", "", string.punctuation))  # email?, time?
+    out = out.translate(
+        str.maketrans("", "", string.punctuation)
+    )  # TODO: handle exceptions
 
     # remove control sequence
     out = rx.sub(r"\p{C}", " ", out)
@@ -30,7 +27,7 @@ def preprocess(text):  # TODO: replace it with tokenizer
 
 
 class NgramLookup:
-    def __init__(self, documents, ids):
+    def __init__(self, documents, ids, dictionary):
         """
         Args:
             documents: A list, list of documents to build ngram upon
@@ -39,41 +36,37 @@ class NgramLookup:
         self.documents = documents
         self.ids = ids
 
-        self.dictionary = Dictionary()
+        self.dictionary = dictionary
         self.ngrams_root = {}
-
-    def build_dictionary(self):
-        print("Building dictionary...")
-        for doc in tqdm(self.documents):
-            words = doc.strip().split()
-            for wrd in words:
-                self.dictionary.add_wrd(wrd)
 
     def build_ngrams(self, n):
         """
         Generate ngrams from the given dictionary and store them in a dictionary
-        {(ngram_idx):(idx)}
+        - key: tuple of word indices
+        - value: set of document indices
 
         Args:
             n: An integer, the rank of the grams that are generated
-
-        Returns:
-            A string, <unk> symbol if index does not exist else the word of the given index
-
         """
 
         # check if dictionary was built
         assert self.dictionary.get_num_of_words() != 1, "Build dictionary first"
 
+        # check if ngram was already built
+        if n in self.ngrams_root:
+            print("%d-grams are already built" % n)
+            return
+
         print("Generating %d-grams from documents" % n)
 
         ngram_to_idx_set = defaultdict(set)
 
-        for id, doc in tqdm(zip(self.ids, self.documents)):
+        for doc_idx, doc in enumerate(tqdm(self.documents)):
             words = doc.strip().split()
-            for ngram in zip(words, words[1:], words[2:]):  # TODO: other than n=3
+            _ngrams = [words[k:] for k in range(n)]
+            for ngram in zip(*_ngrams):
                 ngram_idx = self.dictionary.get_idx_by_wrd_multiple(ngram)
-                ngram_to_idx_set[ngram_idx].add(id)  # TODO: add idx instead of doc id
+                ngram_to_idx_set[ngram_idx].add(doc_idx)
 
         self.ngrams_root[n] = ngram_to_idx_set
 
@@ -84,100 +77,53 @@ class NgramLookup:
             query_wrd: A tuple of query words
 
         Returns:
-            A set of matched document ids, empty set if no match
-
+            A set of matched document indices, empty set if no match
         """
         query_idx = self.dictionary.get_idx_by_wrd_multiple(query_wrd)
-        return self.ngrams_root[N][query_idx]
+        matched_doc_idx = self.ngrams_root[len(query_wrd)][query_idx]  # document indices
+        matched_doc_id = [self.ids[doc_idx] for doc_idx in matched_doc_idx]  # map to document ids
 
-    # TODO: too slow, use in each document?
-    def build_ngrams_trie(self, n):
-        """
-        Generate ngrams from the given dictionary and store them in a Trie data structure
-
-        Args:
-            n: An integer, the rank of the grams that are generated
-
-        Returns:
-            A string, <unk> symbol if index does not exist else the word of the given index
-
-        """
-
-        # check if dictionary was built
-        assert self.dictionary.get_num_of_words() != 1, "Build dictionary first"
-
-        unk_id = self.dictionary.get_unk_id()
-
-        print("Generating %d-grams from documents" % n)
-
-        trie = Trie()
-
-        for doc in tqdm(self.documents):
-            words = doc.strip().split()
-            # new code
-            for ngram in zip(words, words[1:], words[2:]):  # TODO: other than n=3
-                ngram_idx = list(self.dictionary.get_idx_by_wrd_multiple(ngram))
-                trie.add_ngram(ngram_idx)  # trigram_idx should be index
-
-            # original code
-            # ngram = [] # [start_id]
-            # for wrd in words:
-            #     if len(ngram) == n:
-            #         trie.add_ngram(ngram)
-            #         ngram = ngram[1:]
-            #     idx = self.dictionary.get_idx_by_wrd(wrd)
-            #     if idx == unk_id:
-            #         self.unk_cnt += 1
-            #     ngram.append(idx)
-            # if len(ngram) == n:
-            #     trie.add_ngram(ngram)
-            #     ngram = ngram[1:]
-            # trie.add_ngram(ngram)
-
-        print("%d-grams are now stored in a Trie" % n)
-
-        self.ngrams_root[n] = trie
+        return matched_doc_id
 
 
 if __name__ == "__main__":
+    TMP_LEN = 10000  # for testing
+    VOCABS_FILE = None  # './vocab/vocabs.txt'
+
     # Load dataset
     # TODO: use solution from https://github.com/cs6741/summary-analysis/issues/2 to load and align dataset
     dataset = load_dataset("xsum")
 
-    # sample
-    # document = dataset["train"][0]["document"]
-    # summary = dataset["train"][0]["summary"]
-    # id = dataset["train"][0]["id"]
-    #
-    # print(document)
+    # Parse dataset
+    dataset = dataset["train"]
+    documents = dataset["document"]
+    ids = dataset["id"]
 
-    # preprocess sample document
-    # pp_document = preprocess(document)
-
-    # whole documents
-    documents = dataset["train"]["document"][:TMP_LEN]
-    ids = dataset["train"]["id"][:TMP_LEN]
-
-    # preprocess whole documents
+    # preprocess documents
     pp_documents = list(map(preprocess, documents))
 
-    # lookup
-    ngram_lookup = NgramLookup(documents=pp_documents, ids=ids)
-
     # build dictionary
-    ngram_lookup.build_dictionary()
+    dictionary = Dictionary()
+    if VOCABS_FILE:
+        dictionary.build_from_file(vocabs_file=VOCABS_FILE)
+    else:
+        dictionary.build_from_corpus(corpus=pp_documents)
 
-    # query
-    query = str(input("Enter query (3 words): "))  # TODO: now only 3
-    query_wrd = tuple(preprocess(query).strip().split())
+    # lookup
+    ngram_lookup = NgramLookup(documents=pp_documents, ids=ids, dictionary=dictionary)
 
-    # define N
-    N = len(query_wrd)
+    while True:
+        # input query
+        query = str(input("* Enter query (press enter to stop): "))
 
-    # build ngram
-    ngram_lookup.build_ngrams(n=N)
+        if not query:  # stop if empty
+            break
 
-    # lookup - returns ids of documents including query
-    id_list = ngram_lookup.lookup(query_wrd=query_wrd)
+        query_wrd = tuple(preprocess(query).strip().split())
 
-    breakpoint()
+        # build ngram
+        ngram_lookup.build_ngrams(n=len(query_wrd))
+
+        # lookup - returns ids of documents including query
+        id_list = ngram_lookup.lookup(query_wrd=query_wrd)
+        print("* Matched document ids: %s \n" % id_list)
