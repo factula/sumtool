@@ -3,6 +3,7 @@ reference: https://github.com/mmz33/N-Gram-Language-Model/blob/master/index_map.
 """
 
 from collections import defaultdict
+from tqdm import tqdm  # progress
 
 
 class Dictionary:
@@ -11,24 +12,45 @@ class Dictionary:
     It allows to retrieve queries in both direction (wrd->idx, and idx->wrd)
     """
 
-    def __init__(self, vocabs_file=None):
-        """
-        Args:
-            vocabs_file: A string, vocabs file path to load
-        """
+    def __init__(self):
         self.idx = 0  # current index for each word
 
         self.wrd_to_idx = {}
         self.idx_to_wrd = {}
         self.wrd_freq = defaultdict(int)
 
-        if vocabs_file:
-            with open(vocabs_file, "r") as vocabs:
-                for wrd in vocabs:
-                    self.add_wrd(wrd.strip())
-        else:
-            # <unk> already exist in the vocabulary
-            for wrd in {"<unk>"}:
+    def build_from_file(self, vocabs_file):
+        """
+        Args:
+            vocabs_file: A string, vocabs file path to load
+                         lines of {word} \t {freq}
+                         sorted in descending order with freq
+        """
+        print("Loading dictionary from '%s' ..." % vocabs_file)
+        with open(vocabs_file, "r") as f:
+            lines = f.read().splitlines()
+            for idx, line in enumerate(lines):
+                wrd = line.split()[0]
+                freq = int(line.split()[1])
+
+                self.add_wrd(wrd)  # add word
+                self.wrd_freq[idx] = freq  # add freq
+
+        # set total number of words
+        self.idx = len(self.wrd_to_idx)
+
+    def build_from_corpus(self, corpus):
+        """
+        build dictionary from corpus
+
+        Args:
+            corpus: A list, list of documents/sentences to build a dictionary upon
+        """
+        print("Building dictionary from corpus...")
+        self.add_wrd(self.get_unk_wrd())  # add <unk> token
+        for doc in tqdm(corpus):
+            words = doc.strip().split()
+            for wrd in words:
                 self.add_wrd(wrd)
 
     @staticmethod
