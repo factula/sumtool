@@ -12,7 +12,9 @@ class XsumDataset(Dataset):
         self.dataset = list(self._align_data().values())
 
     def _align_data(self):
-        """Aligns data in xsum, factuality, and faithfulness datasets:
+        """
+        Aligns data in xsum, factuality, and faithfulness datasets:
+        
         Returns:
             dataset:  Dict(id, {
                 'id': id of bbc article,
