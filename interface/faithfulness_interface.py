@@ -79,9 +79,13 @@ def annotation_merge(ann):
             new_ann.append(a)
     return new_ann
 
-def annotation_render(ann, func_text, func_color, max_count=3):
+def annotation_render(ann, func_text, func_color, max_count=3, render_presence=False, render_type=False):
     return [
-        (e[0]) if (len(e[1])==0) else (e[0], func_text(e[1]), func_color(e[1],max_count=max_count))
+        (e[0]) if (len(e[1])==0) else (
+            e[0],
+            func_text(e[1]),
+            func_color(e[1], render_presence, render_type, max_count=max_count)
+        )
         for e in ann
     ]
 
@@ -91,10 +95,18 @@ def annotation_text(feats):
     tag_avg = sum(tag_avg)/len(tag_avg)
     return f'{str(tag_avg)[:3]}:{len(feats)}'
 
-def annotation_color(feats, max_count=3):
+def annotation_color(feats, render_presence, render_type, max_count=3):
     # Assume from the XSum data that there are up to 3 workers, with tags of 0/1
+    def colorcombine(a, b, frac_a, render_type):
+        if render_type:
+            return [(frac_a*a[i]+(1-frac_a)*b[i]) for i in range(len(a))]
+        else:
+            return a if (round(frac_a)==1) else b
     def cssify(t):
-        return f'rgba({int(t[0])}, {int(t[1])}, {int(t[2])}, {t[3]})'
+        if render_presence:
+            return f'rgba({int(t[0])}, {int(t[1])}, {int(t[2])}, {t[3]})'
+        else:
+            return f'rgba({int(t[0])}, {int(t[1])}, {int(t[2])})'
     ann_colors = {
         1: (26, 133, 255),
         0: (212, 17, 89),
@@ -102,9 +114,7 @@ def annotation_color(feats, max_count=3):
     tag_avg = [int(i[0]) for i in feats]
     tag_avg = sum(tag_avg)/len(tag_avg)
     return cssify((
-        (tag_avg)*ann_colors[0][0]+(1-tag_avg)*ann_colors[1][0],
-        (tag_avg)*ann_colors[0][1]+(1-tag_avg)*ann_colors[1][1],
-        (tag_avg)*ann_colors[0][2]+(1-tag_avg)*ann_colors[1][2],
+        *colorcombine(ann_colors[1], ann_colors[0], tag_avg, render_type),
         len(feats)/max_count
     ))
 
@@ -114,19 +124,43 @@ def render_faithfulness_interface():
     st.write(f"**# of Annotated summaries:** {len(annotated_data_by_id)}")
     selected_id = str(st.selectbox("Select entry by bbcid", options=annotated_data_by_id.keys()))
 
-    annotated_text.annotated_text(
-        *annotation_render(
-            [['Hallucination type 0 (factual) looks like this.', {(0,'1')}]],
-            annotation_text, annotation_color, max_count=1
-        )
-    )
-    annotated_text.annotated_text(
-        *annotation_render(
-            [['Hallucination type 1 (false) looks like this.', {(1,'1')}]],
-            annotation_text, annotation_color, max_count=1
-        )
-    )
-    st.write('')
+    render_ann_presence = st.checkbox('Distinguish annotation presence', value=False)
+    render_ann_halltype = st.checkbox('Distinguish annotation type', value=False)
+
+    annotated_text.annotated_text(*annotation_render(
+        [
+            ['Hallucination type 0 (factual).', {(0,'1'),(0,'2'),(0,'3')}],
+            ['When only some annotators notice it.', {(0,'1'),(0,'2')}],
+        ],
+        annotation_text, annotation_color, max_count=3,
+        render_presence=render_ann_presence, render_type=render_ann_halltype,
+    ))
+    annotated_text.annotated_text(*annotation_render(
+        [
+            ['Hallucination type 1 (false).', {(1,'1'),(1,'2'),(1,'3')}],
+            ['When only some annotators notice it.', {(1,'1'),(1,'2')}],
+        ],
+        annotation_text, annotation_color, max_count=3,
+        render_presence=render_ann_presence, render_type=render_ann_halltype,
+    ))
+    annotated_text.annotated_text(*annotation_render(
+        [
+            ['Hallucination type mostly 0.', {(0,'1'),(0,'2'),(0,'3'),(0,'4'),(1,'5'),(1,'6')}],
+            ['When only some annotators notice it.', {(0,'1'),(0,'2'),(1,'5')}],
+        ],
+        annotation_text, annotation_color, max_count=6,
+        render_presence=render_ann_presence, render_type=render_ann_halltype,
+    ))
+    annotated_text.annotated_text(*annotation_render(
+        [
+            ['Hallucination type mostly 1.', {(1,'1'),(1,'2'),(1,'3'),(1,'4'),(0,'5'),(0,'6')}],
+            ['When only some annotators notice it.', {(1,'1'),(1,'2'),(0,'5')}],
+        ],
+        annotation_text, annotation_color, max_count=6,
+        render_presence=render_ann_presence, render_type=render_ann_halltype,
+    ))
+
+    st.write('---')
 
     selected_data = annotated_data_by_id[selected_id]
     selected_annotations = pd.DataFrame(selected_data['faithfulness'])
@@ -160,9 +194,10 @@ def render_faithfulness_interface():
                 # (r['hallucination_type'],),
             )
         ann = annotation_merge(ann)
-        annotated_text.annotated_text(
-            *annotation_render(ann, annotation_text, annotation_color, max_count=3)
-        )
+        annotated_text.annotated_text(*annotation_render(
+            ann, annotation_text, annotation_color, max_count=3,
+            render_presence=render_ann_presence, render_type=render_ann_halltype,
+        ))
         st.write('')
 
     st.write("**Document:**")
