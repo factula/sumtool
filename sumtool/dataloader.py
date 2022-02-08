@@ -52,7 +52,9 @@ class XsumDataset(Dataset):
         if self.factuality_data is not None:
             for data in self.factuality_data:
                 if str(data["bbcid"]) not in dataset:
-                    print('ERROR: New datapoint in factuality: {}'.format(data["bbcid"]))
+                    print(
+                        "ERROR: New datapoint in factuality: {}".format(data["bbcid"])
+                    )
                     exit()
 
                 if data["system"] in dataset[str(data["bbcid"])]["factuality_data"]:
@@ -61,26 +63,29 @@ class XsumDataset(Dataset):
                     ][str(data["worker_id"])] = data["is_factual"]
                 else:
                     dataset[str(data["bbcid"])]["factuality_data"][data["system"]] = {
-                            "system": data["system"],
-                            "summary": data["summary"],
-                            "labels": {data["worker_id"]: data["is_factual"]}
-                        }
-                    
+                        "system": data["system"],
+                        "summary": data["summary"],
+                        "labels": {data["worker_id"]: data["is_factual"]},
+                    }
+
         if self.faithfulness_data is not None:
             for data in self.faithfulness_data:
                 if str(data["bbcid"]) not in dataset:
-                    print('ERROR: New datapoint in faithfulness: {}'.format(data["bbcid"]))
+                    print(
+                        "ERROR: New datapoint in faithfulness: {}".format(data["bbcid"])
+                    )
                     exit()
 
                 if data["system"] in dataset[str(data["bbcid"])]["faithfulness_data"]:
                     # spans of hallucinations seem off by one character --> one-indexing vs zero-indexing?
-                    dataset[str(data["bbcid"])]["faithfulness_data"][data["system"]]["labels"][str(data["worker_id"])] = {
+                    dataset[str(data["bbcid"])]["faithfulness_data"][data["system"]][
+                        "labels"
+                    ][str(data["worker_id"])] = {
                         "worker_id": data["worker_id"],
                         "hallucination_type": data["hallucination_type"],
                         "hallucinated_span": data["summary"][
-                            data["hallucinated_span_start"]-1 : data[
-                                "hallucinated_span_end"
-                            ]
+                            data["hallucinated_span_start"]
+                            - 1 : data["hallucinated_span_end"]
                         ],
                         "hallucinated_span_start": data["hallucinated_span_start"],
                         "hallucinated_span_end": data["hallucinated_span_end"],
@@ -89,19 +94,20 @@ class XsumDataset(Dataset):
                     dataset[str(data["bbcid"])]["faithfulness_data"][data["system"]] = {
                         "system": data["system"],
                         "summary": data["summary"],
-                        'labels': {
+                        "labels": {
                             str(data["worker_id"]): {
                                 "worker_id": data["worker_id"],
                                 "hallucination_type": data["hallucination_type"],
                                 "hallucinated_span": data["summary"][
-                                    data["hallucinated_span_start"]-1 : data[
-                                        "hallucinated_span_end"
-                                    ]
+                                    data["hallucinated_span_start"]
+                                    - 1 : data["hallucinated_span_end"]
                                 ],
-                                "hallucinated_span_start": data["hallucinated_span_start"],
+                                "hallucinated_span_start": data[
+                                    "hallucinated_span_start"
+                                ],
                                 "hallucinated_span_end": data["hallucinated_span_end"],
                             }
-                        }
+                        },
                     }
         return dataset
 
@@ -138,8 +144,12 @@ if __name__ == "__main__":
         pprint.PrettyPrinter(indent=4).pprint(item)
         break
 
-    # For compiled data (for data vis only?), we can just enumerate over the dataset-- no dataloader. 
-    compiled_data = XsumDataset(data_xsum["test"], data_xsum_factuality["train"], data_xsum_faithfulness["train"])
+    # For compiled data (for data vis only?), we can just enumerate over the dataset-- no dataloader.
+    compiled_data = XsumDataset(
+        data_xsum["test"],
+        data_xsum_factuality["train"],
+        data_xsum_faithfulness["train"],
+    )
 
     for _, item in enumerate(compiled_data):
         pprint.PrettyPrinter(indent=4).pprint(item)
