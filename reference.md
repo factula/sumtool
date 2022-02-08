@@ -31,7 +31,7 @@ A Study of Summarizing Radiology Reports](https://arxiv.org/pdf/1911.02541.pdf),
 
 ## Summarization algorithms/models
 
-- Nallapati, Ramesh, et al. [Abstractive Text Summarization using Sequence-to-sequence RNNs and Beyond](). Proceedings of The 20th SIGNLL Conference on Computational Natural Language Learning. 2016. [Code(Non-official)](https://github.com/theamrzaki/text_summurization_abstractive_methods)
+- Nallapati, Ramesh, et al. [Abstractive Text Summarization using Sequence-to-sequence RNNs and Beyond](https://arxiv.org/abs/1602.06023). Proceedings of The 20th SIGNLL Conference on Computational Natural Language Learning. 2016. [Code(Non-official)](https://github.com/theamrzaki/text_summurization_abstractive_methods)
 
 - Zhang, Jingqing, et al. [Pegasus: Pre-training with extracted gap-sentences for abstractive summarization](http://proceedings.mlr.press/v119/zhang20ae/zhang20ae.pdf). International Conference on Machine Learning. PMLR, 2020. [Code](https://github.com/google-research/pegasus) 
 
