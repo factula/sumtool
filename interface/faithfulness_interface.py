@@ -116,13 +116,13 @@ def render_faithfulness_interface():
 
     annotated_text.annotated_text(
         *annotation_render(
-            [['Hallucination type 0 (factual) looks like this.', {(0,'1')}]],
+            [['Hallucination type 0 (intrinsic?) looks like this.', {(0,'1')}]],
             annotation_text, annotation_color, max_count=1
         )
     )
     annotated_text.annotated_text(
         *annotation_render(
-            [['Hallucination type 1 (false) looks like this.', {(1,'1')}]],
+            [['Hallucination type 1 (extrinsic?) looks like this.', {(1,'1')}]],
             annotation_text, annotation_color, max_count=1
         )
     )
