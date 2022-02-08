@@ -8,13 +8,14 @@ def render():
     pages = {
         "Factuality Annotations": render_factuality_interface,
         "Faithfulness Annotations": render_faithfulness_interface,
-        "Model Interface": render_model_interface
+        "Model Interface": render_model_interface,
     }
 
     st.sidebar.title("CS6741 - Summary Analysis")
     selected_page = st.sidebar.radio("Select a page", options=list(pages.keys()))
 
     pages[selected_page]()
+
 
 if __name__ == "__main__":
     render()

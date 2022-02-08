@@ -15,7 +15,7 @@ pip install -r requirements.txt
 streamlit run interface/app.py
 ```
 
-You can also run interfaces individually, e.g.
+You can also run interfaces individually, i.e. 
 ```
 streamlit run interface/factuality_interface.py
 ```
@@ -29,7 +29,7 @@ pip install -r requirements.dev.txt
 
 Before commiting:
 ```
-black sumtool/
-flake8 sumtool/
+black sumtool/ interface/
+flake8 sumtool/ interface/
 ```
 
