@@ -65,7 +65,7 @@ class Dictionary:
         Update dictionary and increase word's frequency
 
         Args:
-          wrd: A string, the input word
+            wrd: A string, the input word
 
         """
 
@@ -81,10 +81,10 @@ class Dictionary:
         Return the word of the given index
 
         Args:
-          idx: An int, the index of the given word
+            idx: An int, the index of the given word
 
         Returns:
-          A string, <unk> symbol if index does not exist else the word of the given index
+            A string, <unk> symbol if index does not exist else the word of the given index
 
         """
 
@@ -97,10 +97,10 @@ class Dictionary:
         Return the word tuple of the given indices
 
         Args:
-          idx_tuple: A tuple of indices
+            idx_tuple: A tuple of indices
 
         Returns:
-          A tuple of corresponding words, <unk> symbol if index does not exist else the word of the given index
+            A tuple of corresponding words, <unk> symbol if index does not exist else the word of the given index
 
         """
 
@@ -111,10 +111,10 @@ class Dictionary:
         Return the index of the given word
 
         Args:
-          wrd: A string, the word
+            wrd: A string, the word
 
         Returns:
-          An integer, get_unk_id() if word does not exist else the index of the word
+            An integer, get_unk_id() if word does not exist else the index of the word
 
         """
 
@@ -127,10 +127,10 @@ class Dictionary:
         Return the index tuple of the given word tuple
 
         Args:
-          wrd_tuple: A tuple of words
+            wrd_tuple: A tuple of words
 
         Returns:
-          A tuple of corresponding indices
+            A tuple of corresponding indices
 
         """
 
@@ -141,7 +141,7 @@ class Dictionary:
         Return the total number of words
 
         Returns:
-          :return: An integer, the number of total words
+            An integer, the number of total words
 
         """
 
@@ -152,10 +152,10 @@ class Dictionary:
         Return the frequency of a word given it's index
 
         Args:
-          idx: An integer, an index of a word
+            idx: An integer, an index of a word
 
         Returns:
-          An integer, the frequency of the given word
+            An integer, the frequency of the given word
 
         """
 
@@ -166,10 +166,10 @@ class Dictionary:
         Return the frequency of a word
 
         Args:
-          wrd: A string
+            wrd: A string
 
         Returns:
-          An integer, the frequency of the given word
+            An integer, the frequency of the given word
 
         """
 
@@ -178,3 +178,6 @@ class Dictionary:
     def get_wrd_freq_items(self):
 
         return self.wrd_freq.items()
+
+    # TODO: how to save dictionary
+    # TODO: sort it by frequency?

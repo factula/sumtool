@@ -30,8 +30,9 @@ class NgramLookup:
     def __init__(self, documents, ids, dictionary):
         """
         Args:
-            documents: A list, list of documents to build ngram upon
-            ids:
+            documents: A list of documents to build ngram upon
+            ids: A list of documents ids
+            dictionary: Dictionary, pre-built dictionary object
         """
         self.documents = documents
         self.ids = ids
@@ -87,7 +88,7 @@ class NgramLookup:
 
 
 if __name__ == "__main__":
-    TMP_LEN = 10000  # for testing
+    TMP_LEN = 10000  # testing on small dataset
     VOCABS_FILE = None  # './vocab/vocabs.txt'
 
     # Load dataset
@@ -124,6 +125,8 @@ if __name__ == "__main__":
         # build ngram
         ngram_lookup.build_ngrams(n=len(query_wrd))
 
-        # lookup - returns ids of documents including query
+        # lookup - returns ids of matched documents
         id_list = ngram_lookup.lookup(query_wrd=query_wrd)
         print("* Matched document ids: %s \n" % id_list)
+
+        # TODO: API for visualization
