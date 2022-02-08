@@ -129,7 +129,7 @@ def render_faithfulness_interface():
 
     annotated_text.annotated_text(*annotation_render(
         [
-            ['Hallucination type 0 (factual).', {(0,'1'),(0,'2'),(0,'3')}],
+            ['Hallucination type 0 (intrinsic?).', {(0,'1'),(0,'2'),(0,'3')}],
             ['When only some annotators notice it.', {(0,'1'),(0,'2')}],
         ],
         annotation_text, annotation_color, max_count=3,
@@ -137,7 +137,7 @@ def render_faithfulness_interface():
     ))
     annotated_text.annotated_text(*annotation_render(
         [
-            ['Hallucination type 1 (false).', {(1,'1'),(1,'2'),(1,'3')}],
+            ['Hallucination type 1 (extrinsic?).', {(1,'1'),(1,'2'),(1,'3')}],
             ['When only some annotators notice it.', {(1,'1'),(1,'2')}],
         ],
         annotation_text, annotation_color, max_count=3,
