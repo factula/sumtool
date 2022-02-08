@@ -49,7 +49,7 @@ A Study of Summarizing Radiology Reports](https://arxiv.org/pdf/1911.02541.pdf),
 
 - Gehrmann, Sebastian, et al. [The gem benchmark: Natural language generation, its evaluation and metrics](https://arxiv.org/pdf/2102.01672.pdf), Proceedings of the 1st Workshop on Natural Language Generation, Evaluation, and Metrics (GEM), 2021. 
 
-- Shi, Tian, et al. [Neural abstractive text summarization with sequence-to-sequence models.](https://dl.acm.org/doi/pdf/10.1145/3419106) ACM Transactions on Data Science 2.1 (2021): 1-37.
+- Shi, Tian, et al. [Neural abstractive text summarization with sequence-to-sequence models.](https://dl.acm.org/doi/pdf/10.1145/3419106), ACM Transactions on Data Science 2.1 (2021): 1-37.
 
 ## Dataset
 
