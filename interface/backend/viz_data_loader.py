@@ -1,6 +1,5 @@
 from datasets import load_dataset
 
-
 def collapse_factuality_annotations(annotations):
     """
     Collapse factuality annotations for each system across the workers
@@ -85,5 +84,4 @@ def load_annotated_data_by_id():
         if row["id"] in annotated_data_by_id:
             annotated_data_by_id[row["id"]]["ground_truth_summary"] = row["summary"]
             annotated_data_by_id[row["id"]]["document"] = row["document"]
-
     return annotated_data_by_id

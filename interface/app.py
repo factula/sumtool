@@ -1,11 +1,13 @@
 import streamlit as st
 from factuality_interface import render_factuality_interface
+from faithfulness_interface import render_faithfulness_interface
 from model_interface import render_model_interface
 
 
 def render():
     pages = {
         "Factuality Annotations": render_factuality_interface,
+        "Faithfulness Annotations": render_faithfulness_interface,
         "Model Interface": render_model_interface,
     }
 
