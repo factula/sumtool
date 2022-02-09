@@ -210,4 +210,4 @@ def render_faithfulness_interface():
     st.write(selected_annotations)
 
 if __name__ == "__main__":
-    render_hallucination_interface()
+    render_faithfulness_interface()
