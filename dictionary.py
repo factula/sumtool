@@ -179,5 +179,17 @@ class Dictionary:
 
         return self.wrd_freq.items()
 
-    # TODO: how to save dictionary
+    def save_as_file(self, file_path):
+        sorted_wrd_freq = self.sort_dict_by_value(self.wrd_freq)
+
+        print("Saving dictionary to %s" % file_path)
+        with open(file_path, "w") as f:
+            for idx, freq in sorted_wrd_freq.items():
+                f.write("%s\t%d\n" % (self.get_wrd_by_idx(idx), freq))
+
     # TODO: sort it by frequency?
+    def sort_dict_by_key(self, d, reverse=True):
+        return dict(sorted(d.items(), reverse=reverse))
+
+    def sort_dict_by_value(self, d, reverse=True):
+        return dict(sorted(d.items(), key=lambda item: item[1], reverse=reverse))

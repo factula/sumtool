@@ -81,14 +81,16 @@ class NgramLookup:
             A set of matched document indices, empty set if no match
         """
         query_idx = self.dictionary.get_idx_by_wrd_multiple(query_wrd)
-        matched_doc_idx = self.ngrams_root[len(query_wrd)][query_idx]  # document indices
-        matched_doc_id = [self.ids[doc_idx] for doc_idx in matched_doc_idx]  # map to document ids
+        matched_doc_idx = self.ngrams_root[len(query_wrd)][
+            query_idx
+        ]  # document indices
+        # matched_doc_id = [self.ids[doc_idx] for doc_idx in matched_doc_idx]  # map to document ids
 
-        return matched_doc_id
+        return matched_doc_idx
 
 
 if __name__ == "__main__":
-    TMP_LEN = 10000  # testing on small dataset
+    TMP_LEN = 100000  # testing on small dataset
     VOCABS_FILE = None  # './vocab/vocabs.txt'
 
     # Load dataset
@@ -109,6 +111,7 @@ if __name__ == "__main__":
         dictionary.build_from_file(vocabs_file=VOCABS_FILE)
     else:
         dictionary.build_from_corpus(corpus=pp_documents)
+        dictionary.save_as_file(file_path=VOCABS_FILE)
 
     # lookup
     ngram_lookup = NgramLookup(documents=pp_documents, ids=ids, dictionary=dictionary)
@@ -125,8 +128,13 @@ if __name__ == "__main__":
         # build ngram
         ngram_lookup.build_ngrams(n=len(query_wrd))
 
-        # lookup - returns ids of matched documents
-        id_list = ngram_lookup.lookup(query_wrd=query_wrd)
-        print("* Matched document ids: %s \n" % id_list)
+        # lookup - returns indices of matched documents
+        matched_idx_list = ngram_lookup.lookup(query_wrd=query_wrd)
+
+        print("* %d matched results:" % len(matched_idx_list))
+        for matched_idx in matched_idx_list:
+            print("id:", ids[matched_idx])
+            # print('document:', documents[matched_idx]) # too long
 
         # TODO: API for visualization
+        # what should be the output - matched_id_list?
