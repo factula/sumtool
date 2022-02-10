@@ -2,6 +2,7 @@ import argparse
 import torch
 import datasets
 from typing import Tuple
+from dataloader import XsumDataset
 
 from transformers import BartTokenizer, BartForConditionalGeneration
 
@@ -76,10 +77,10 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--data_index",
+        "--bbc_id",
         type=int,
         required=True,
-        help="id of the example in the xsum dataset",
+        help="Document BBC ID in the Xsum dataset",
     )
 
     parser.add_argument(
@@ -96,10 +97,10 @@ if __name__ == "__main__":
 
     model, tokenizer = load_summarization_model_and_tokenizer(device)
 
-    xsum_data = datasets.load_dataset("xsum")
-    xsum_example = xsum_data[args.data_split][args.data_index]
+    xsum_train_data = XsumDataset(datasets.load_dataset("xsum")[args.data_split])
+    xsum_example = xsum_train_data[args.bbc_id]
 
     summary = predict_summary(model, tokenizer, xsum_example["document"])
 
-    print("GOLD STANDARD SUMMARY:", xsum_example["summary"])
+    print("GOLD STANDARD SUMMARY:", xsum_example["true_summary"])
     print("PREDICTED SUMMARY:", summary)
