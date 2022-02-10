@@ -216,7 +216,6 @@ def render_faithfulness_interface():
 
     selected_data = annotated_data_by_id[selected_id]
     selected_annotations = pd.DataFrame(selected_data["faithfulness"])
-    selected_factuality = pd.DataFrame(selected_data["factuality"])
 
     # summarize annotations for each model summary
     # TODO present these in an ordered way
@@ -238,7 +237,6 @@ def render_faithfulness_interface():
         for _, r in g_annotations[g_annotations["hallucination_type"] != -1].iterrows():
             h_begin = r["hallucinated_span_start"] - 1
             h_end = r["hallucinated_span_end"] - 1
-            h_type = r["hallucination_type"]
             ann = annotation_overlap(
                 ann,
                 h_begin,

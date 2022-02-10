@@ -5,6 +5,12 @@ def collapse_factuality_annotations(annotations):
     """
     Collapse factuality annotations for each system across the workers
     and calculate their mean factuality score
+
+    Args:
+        annotations (list[str]): annotions for a given article
+
+    Returns:
+        list of reduced annotions - one per system (list[dict])
     """
 
     collapsed = []
@@ -34,19 +40,20 @@ def load_annotated_data_by_id():
     """
     Load xsum dataset with factuality & faithfulness annotations
 
-    Returns: Dict(article_id, {
-        id: str,
-        ground_truth_summary: str,
-        document: str,
-        factuality: [{
-            system: [BERTS2S, TRANS2S, TConvS2S, PTGen],
-            generated_summary: str,
-            mean_worker_factuality_score: float
-        }]
-        faithfulness: [{
-            ...Todo...
-        }]
-    })
+    Returns:
+        Dict(article_id, {
+            id: str,
+            ground_truth_summary: str,
+            document: str,
+            factuality: [{
+                system: [BERTS2S, TRANS2S, TConvS2S, PTGen],
+                generated_summary: str,
+                mean_worker_factuality_score: float
+            }]
+            faithfulness: [{
+                ...Todo...
+            }]
+        })
     """
     # TODO: use solution from https://github.com/cs6741/summary-analysis/issues/2 to align data
     data_xsum = load_dataset("xsum")
