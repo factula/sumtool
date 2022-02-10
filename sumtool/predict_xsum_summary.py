@@ -98,7 +98,7 @@ if __name__ == "__main__":
     model, tokenizer = load_summarization_model_and_tokenizer(device)
 
     xsum_train_data = XsumDataset(datasets.load_dataset("xsum")[args.data_split])
-    xsum_example = xsum_train_data[args.bbc_id]
+    xsum_example = xsum_train_data.query_by_bbc_id(args.bbc_id)
 
     summary = predict_summary(model, tokenizer, xsum_example["document"])
 

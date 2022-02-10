@@ -11,6 +11,14 @@ class XsumDataset(Dataset):
 
         self.dataset = list(self._align_data().values())
 
+
+    def query_by_bbc_id(self, bbc_id):
+        for example in self.dataset:
+            if example["id"] == str(bbc_id):
+                return example
+        raise ValueError(f"no article for bbc_id: {bbc_id}")
+
+
     def _align_data(self):
         """
         Aligns data in xsum, factuality, and faithfulness datasets:
