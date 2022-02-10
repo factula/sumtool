@@ -19,15 +19,15 @@ class Dictionary:
         self.idx_to_wrd = {}
         self.wrd_freq = defaultdict(int)
 
-    def build_from_file(self, vocabs_file):
+    def build_from_file(self, file_path):
         """
         Args:
-            vocabs_file: A string, vocabs file path to load
+            file_path: A string, vocabs file path to load
                          lines of {word} \t {freq}
                          sorted in descending order with freq
         """
-        print("Loading dictionary from '%s' ..." % vocabs_file)
-        with open(vocabs_file, "r") as f:
+        print("Loading dictionary from '%s' ..." % file_path)
+        with open(file_path, "r") as f:
             lines = f.read().splitlines()
             for idx, line in enumerate(lines):
                 wrd = line.split()[0]
@@ -187,9 +187,3 @@ class Dictionary:
             for idx, freq in sorted_wrd_freq.items():
                 f.write("%s\t%d\n" % (self.get_wrd_by_idx(idx), freq))
 
-    # TODO: sort it by frequency?
-    def sort_dict_by_key(self, d, reverse=True):
-        return dict(sorted(d.items(), reverse=reverse))
-
-    def sort_dict_by_value(self, d, reverse=True):
-        return dict(sorted(d.items(), key=lambda item: item[1], reverse=reverse))
