@@ -1,13 +1,11 @@
 import streamlit as st
 from summary_interface import render_summary_interface
-from faithfulness_interface import render_faithfulness_interface
 from model_interface import render_model_interface
 
 
 def render():
     pages = {
         "Explore Summarization Datasets": render_summary_interface,
-        "Faithfulness Annotations": render_faithfulness_interface,
         "Model Interface": render_model_interface,
     }
 
