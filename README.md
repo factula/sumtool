@@ -1,4 +1,15 @@
 # sumtool
+A toolkit for understanding factuality & consistency errors in summarization models.
+
+### Core Features
+- A harness for generating text summaries with automated consistency & factuality checks 
+- - NLI (textual entailment)
+- - Question answering
+- - _Other metrics (BERT-Score, Rouge Score, etc.)_
+
+- An interactive query interface for exploring generated summaries (i.e. XSum or custom dataset)
+- - Search for common factuality errors across your dataset (i.e. find all numerical errors)
+- - Explore faithfulness & factuality annotations (if available)
 
 ## References
 
