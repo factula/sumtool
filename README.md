@@ -28,7 +28,7 @@ streamlit run interface/app.py
 
 You can also run interfaces individually, i.e. 
 ```
-streamlit run interface/factuality_interface.py
+streamlit run interface/summary_interface.py
 ```
 
 ### Contributors
