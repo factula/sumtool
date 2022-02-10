@@ -9,7 +9,7 @@ class XsumDataset(Dataset):
         self.factuality_data = factuality_data
         self.faithfulness_data = faithfulness_data
 
-        self.dataset = self._align_data()
+        self.dataset = list(self._align_data().values())
 
     def _align_data(self):
         """
@@ -117,7 +117,7 @@ class XsumDataset(Dataset):
         return len(self.dataset)
 
     def __getitem__(self, idx):
-        return self.dataset[str(idx)]
+        return self.dataset[idx]
 
 
 if __name__ == "__main__":
