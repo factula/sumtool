@@ -2,7 +2,7 @@ import argparse
 import torch
 import datasets
 from typing import Tuple
-from dataloader import XsumDataset
+from xsum_dataset import XsumDataset
 
 from transformers import BartTokenizer, BartForConditionalGeneration
 
