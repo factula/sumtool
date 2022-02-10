@@ -187,3 +187,8 @@ class Dictionary:
             for idx, freq in sorted_wrd_freq.items():
                 f.write("%s\t%d\n" % (self.get_wrd_by_idx(idx), freq))
 
+    def sort_dict_by_key(self, d, reverse=True):
+        return dict(sorted(d.items(), reverse=reverse))
+
+    def sort_dict_by_value(self, d, reverse=True):
+        return dict(sorted(d.items(), key=lambda item: item[1], reverse=reverse))
