@@ -2,7 +2,7 @@ import streamlit as st
 import annotated_text
 import pandas as pd
 from backend.viz_data_loader import load_annotated_data_by_id
-from backend.faithfulness_annotations import (
+from utils.faithfulness_annotations import (
     annotation_overlap,
     annotation_merge,
     annotation_render,
