@@ -2,7 +2,7 @@
 A toolkit for understanding factuality & consistency errors in summarization models.
 
 ### Core Features
-- A harness for generating text summaries with automated consistency & factuality checks 
+- A harness for generating text summaries with automated factuality evaluations 
 - - NLI (textual entailment)
 - - Question answering
 - - _Other metrics (BERT-Score, Rouge Score, etc.)_
