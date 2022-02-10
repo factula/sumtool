@@ -1,5 +1,6 @@
 from datasets import load_dataset
 
+
 def collapse_factuality_annotations(annotations):
     """
     Collapse factuality annotations for each system across the workers
