@@ -58,7 +58,7 @@ def render_summary_interface():
     # hard-coded XSUM for now
     st.write(
         f"""
-**Selected dataset:** XSUM with Factuality & Faithfulness Annotations (TODO: reference paper)  
+**Selected dataset:** XSUM with Factuality & Faithfulness Annotations (TODO: reference paper) \\
 **Annotated summaries:** {len(annotated_data_by_id)}
 
 **TODO:** _aggregated dataset statistics_
@@ -106,11 +106,11 @@ def render_summary_interface():
         )
         col1.write(
             f"""
-**{g_model}**  
-_factuality score:_ {factuality_score}  
-_rogue1 score:_ **TODO**  
-_rogue2 score:_ **TODO**  
-_bert score:_ **TODO**  
+**{g_model}** \\
+_factuality score:_ {factuality_score} \\
+_rogue1 score:_ **TODO** \\
+_rogue2 score:_ **TODO** \\
+_bert score:_ **TODO**
         """  # noqa
         )
         with col2:
