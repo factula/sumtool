@@ -62,7 +62,7 @@ def render_summary_interface():
 **Annotated summaries:** {len(annotated_data_by_id)}
 
 **TODO:** _aggregated dataset statistics_
-    """  # noqa
+    """
     )
     selected_id = str(
         st.selectbox("Select entry by bbcid", options=annotated_data_by_id.keys())
@@ -76,6 +76,8 @@ def render_summary_interface():
     )
 
     render_faithfulness_annotation_legend(render_ann_presence, render_ann_halltype)
+
+    st.write("---")
 
     selected_data = annotated_data_by_id[selected_id]
     selected_faithfulness = pd.DataFrame(selected_data["faithfulness"])
@@ -111,7 +113,7 @@ _factuality score:_ {factuality_score} \\
 _rogue1 score:_ **TODO** \\
 _rogue2 score:_ **TODO** \\
 _bert score:_ **TODO**
-        """  # noqa
+        """
         )
         with col2:
             render_summary_with_annotations(

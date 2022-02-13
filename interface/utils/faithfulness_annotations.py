@@ -194,7 +194,7 @@ def render_faithfulness_annotation_legend(render_ann_presence, render_ann_hallty
         st.write(
             """
         If annotators disagree, the annotation color is adjusted accordingly.
-        """  # noqa
+        """
         )
     elif not render_ann_halltype and render_ann_presence:
         annotated_text.annotated_text(
@@ -231,9 +231,9 @@ def render_faithfulness_annotation_legend(render_ann_presence, render_ann_hallty
         )
         st.write(
             """
-        If annotators disagree, the majority annotation is chosen.  
-        If the annotation is partial (out of 3 workers), the annotation color is adjusted accordingly.  
-        """  # noqa
+        If annotators disagree, the majority annotation is chosen. \\
+        If the annotation is partial (out of 3 workers), the annotation color is adjusted accordingly.
+        """
         )
     else:
         annotated_text.annotated_text(
@@ -308,9 +308,7 @@ def render_faithfulness_annotation_legend(render_ann_presence, render_ann_hallty
         )
         st.write(
             """
-        If annotators disagree, the annotation color is adjusted accordingly.  
-        If the annotation is partial (out of 3 workers), the annotation color is adjusted accordingly.  
-        """  # noqa
+        If annotators disagree, the annotation color is adjusted accordingly. \\
+        If the annotation is partial (out of 3 workers), the annotation color is adjusted accordingly.
+        """
         )
-
-    st.write("---")
