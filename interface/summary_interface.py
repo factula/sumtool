@@ -150,11 +150,17 @@ _bert score:_ **TODO**
     last_end = len(selected_summsrc_summ)
     while last_end > 0:
         new_spans = [
-            (i.start() + 1, i.end() - 1)
+            (i.start()+1, i.end()-1)
             for i in re.finditer(
                 r"[ \".,'].*[ \".,']", selected_summsrc_summ[:last_end], overlapped=True
             )
+        ] + [
+            (i.start(), i.end()-1)
+            for i in re.finditer(
+                r"^.*[ \".,']", selected_summsrc_summ[:last_end], overlapped=True
+            )
         ]
+        new_spans = sorted(set(new_spans), key=lambda x: x[0])
         searching_spans += new_spans
         searching_spans = [e for e in searching_spans if e[1] - e[0] >= 3]
         if len(new_spans) == 0:
@@ -163,10 +169,18 @@ _bert score:_ **TODO**
     searching_spans = sorted(set(searching_spans), key=lambda x: x[0])
     # scan through every substring/token span for matches
     for (i, j) in searching_spans:
-        match_list = re.finditer(
-            selected_summsrc_summ[i:j], selected_summsrc_src, re.IGNORECASE
-        )
-        match_list = [(m.start(0), m.end(0)) for m in match_list]
+        match_list = [
+            (i.start()+1, i.end()-1)
+            for i in re.finditer(
+                r"[ \".,']"+selected_summsrc_summ[i:j]+r"[ \".,']", selected_summsrc_src, re.IGNORECASE
+            )
+        ] + [
+            (i.start(), i.end()-1)
+            for i in re.finditer(
+                r"^"+selected_summsrc_summ[i:j]+r"[ \".,']", selected_summsrc_src, re.IGNORECASE
+            )
+        ]
+        match_list = sorted(set(match_list), key=lambda x: x[0])
         if len(match_list) > 0:
             linked_spans[(i, j)] = match_list
     # pick what span matches to prioritize highlighting
@@ -177,25 +191,49 @@ _bert score:_ **TODO**
     for s in searching_matches:
         if all([(s[1] <= h[0] or s[0] >= h[1]) for h in highlights]):
             highlights += [s]
-    # highlights = [(summ_begin, summ_end)] where each tuple is a key in linked_spans
-    # linked_spans[(summ_begin, summ_end)] = [(src_begin1, src_end1), (src_begin2, src_end2)]
-    # TODO: render the search findings
-    st.write(
-        [
-            (
-                selected_summsrc_summ[k[0] : k[1]],
-                len(linked_spans[k]),
-                str(k),
-                str(linked_spans[k]),
-            )
-            for k in highlights
-        ]
-    )
+    # render the search findings
     cm_color = iter(cm.rainbow(np.linspace(0, 1, len(highlights))))
+    ann_links_summ = [[selected_summsrc_summ, set()]]
+    ann_links_src = [[selected_summsrc_src, set()]]
     for i in range(len(highlights)):
+        tag = f'S{i}'
         c = next(cm_color)
-        st.write(str(c))
-    st.write(selected_summsrc_summ)
+        ann_links_summ = annotation_overlap(
+            ann_links_summ,
+            highlights[i][0],
+            highlights[i][1],
+            (tag, tuple(c)),
+        )
+        for j in range(len(linked_spans[highlights[i]])):
+            ann_links_src = annotation_overlap(
+                ann_links_src,
+                linked_spans[highlights[i]][j][0],
+                linked_spans[highlights[i]][j][1],
+                (tag, tuple(c))
+            )
+    def link_tag(feats):
+        return list(feats)[0][0]
+    def link_color(feats, rp, rt, max_overlap):
+        f = list(feats)[0][1]
+        m = 156
+        return f"rgba({m*f[0]}, {m*f[1]}, {m*f[2]}, {f[3]})"
+    annotated_text.annotated_text(
+        *annotation_render(
+            ann_links_summ,
+            link_tag,
+            link_color,
+            max_overlap=1,
+        )
+    )
+    st.write("")
+    annotated_text.annotated_text(
+        *annotation_render(
+            ann_links_src,
+            link_tag,
+            link_color,
+            max_overlap=1,
+        )
+    )
 
 
 if __name__ == "__main__":
