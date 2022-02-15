@@ -19,6 +19,7 @@ A toolkit for understanding factuality & consistency errors in summarization mod
 Setup (python 3.8):
 ```
 pip install -r requirements.txt
+pip install .
 ```
 
 ### Run Streamlit app
@@ -36,6 +37,7 @@ streamlit run interface/summary_interface.py
 Setup (python 3.8):
 ```
 pip install -r requirements.dev.txt
+pip install -Ue .
 ```
 
 Before commiting:

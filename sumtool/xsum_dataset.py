@@ -8,13 +8,14 @@ class XsumDataset(Dataset):
         self.xsum_data = xsum_data
         self.factuality_data = factuality_data
         self.faithfulness_data = faithfulness_data
-
         self.dataset = list(self._align_data().values())
+        self.data_by_id = {
+            x["id"]: x for x in self.dataset
+        }
 
     def query_by_bbc_id(self, bbc_id):
-        for example in self.dataset:
-            if example["id"] == str(bbc_id):
-                return example
+        if str(bbc_id) in self.data_by_id:
+            return self.data_by_id[str(bbc_id)]
         raise ValueError(f"no article for bbc_id: {bbc_id}")
 
     def _align_data(self):
@@ -34,13 +35,13 @@ class XsumDataset(Dataset):
                 'faithfulness_data': Dict(system name: {
                         'system': system name,
                         'summary': system summary,
-                        'labels': Dict(worker_id, {
+                        'labels': [
                             'worker_id': worker id,
                             'hallucination_type': hallucination type,
                             'hallucinated_span': hallucinated span,
                             'hallucinated_span_start': hallucinated span start,
                             'hallucinated_span_end': hallucinated span end
-                        })
+                        ]
                     })
                 })
 
@@ -84,38 +85,26 @@ class XsumDataset(Dataset):
                     )
                     exit()
 
-                if data["system"] in dataset[str(data["bbcid"])]["faithfulness_data"]:
+                annotation = {
+                    "worker_id": data["worker_id"],
+                    "hallucination_type": data["hallucination_type"],
                     # spans of hallucinations seem off by one character --> one-indexing vs zero-indexing?
+                    "hallucinated_span": data["summary"][
+                        data["hallucinated_span_start"]
+                        - 1 : data["hallucinated_span_end"]
+                    ],
+                    "hallucinated_span_start": data["hallucinated_span_start"],
+                    "hallucinated_span_end": data["hallucinated_span_end"],
+                }
+                if data["system"] in dataset[str(data["bbcid"])]["faithfulness_data"]:
                     dataset[str(data["bbcid"])]["faithfulness_data"][data["system"]][
                         "labels"
-                    ][str(data["worker_id"])] = {
-                        "worker_id": data["worker_id"],
-                        "hallucination_type": data["hallucination_type"],
-                        "hallucinated_span": data["summary"][
-                            data["hallucinated_span_start"]
-                            - 1 : data["hallucinated_span_end"]
-                        ],
-                        "hallucinated_span_start": data["hallucinated_span_start"],
-                        "hallucinated_span_end": data["hallucinated_span_end"],
-                    }
+                    ].append(annotation)
                 else:
                     dataset[str(data["bbcid"])]["faithfulness_data"][data["system"]] = {
                         "system": data["system"],
                         "summary": data["summary"],
-                        "labels": {
-                            str(data["worker_id"]): {
-                                "worker_id": data["worker_id"],
-                                "hallucination_type": data["hallucination_type"],
-                                "hallucinated_span": data["summary"][
-                                    data["hallucinated_span_start"]
-                                    - 1 : data["hallucinated_span_end"]
-                                ],
-                                "hallucinated_span_start": data[
-                                    "hallucinated_span_start"
-                                ],
-                                "hallucinated_span_end": data["hallucinated_span_end"],
-                            }
-                        },
+                        "labels": [annotation]
                     }
         return dataset
 

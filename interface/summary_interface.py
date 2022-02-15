@@ -11,13 +11,7 @@ from utils.faithfulness_annotations import (
 import annotated_text
 import pandas as pd
 
-
-@st.experimental_memo
-def cache_load_annotated_data_by_id():
-    return load_annotated_data_by_id()
-
-
-annotated_data_by_id = cache_load_annotated_data_by_id()
+annotated_data_by_id = load_annotated_data_by_id()
 
 
 def render_summary_with_annotations(
@@ -78,8 +72,8 @@ def render_summary_interface():
     render_faithfulness_annotation_legend(render_ann_presence, render_ann_halltype)
 
     selected_data = annotated_data_by_id[selected_id]
-    selected_faithfulness = pd.DataFrame(selected_data["faithfulness"])
-    df_factuality = pd.DataFrame(selected_data["factuality"])
+    selected_faithfulness = pd.DataFrame(selected_data["faithfulness_data"])
+    df_factuality = pd.DataFrame(selected_data["factuality_data"].values())
 
     if "system" in df_factuality.columns:
         df_factuality.set_index("system", inplace=True)
