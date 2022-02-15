@@ -19,7 +19,7 @@ A toolkit for understanding factuality & consistency errors in summarization mod
 Setup (python 3.8):
 ```
 pip install -r requirements.txt
-pip install -Ue .
+pip install .
 ```
 
 ### Run Streamlit app
