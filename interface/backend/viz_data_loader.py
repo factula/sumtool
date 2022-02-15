@@ -14,13 +14,13 @@ def prepare_data_for_view(data):
 
     flat_faithfulness_data = []
     for val in data["faithfulness_data"].values():
-        for labels in val["labels"].values():
+        for label in val["labels"]:
             flattened = {
                 "system": val["system"],
                 "summary": val["summary"],
             }
-            for key, value in labels.items():
-                flattened[key] = value
+            for label_key, label_value in label.items():
+                flattened[label_key] = label_value
             flat_faithfulness_data.append(flattened)
 
     return {
@@ -28,6 +28,7 @@ def prepare_data_for_view(data):
         "factuality_data": factuality_data,
         "faithfulness_data": flat_faithfulness_data
     }
+
 
 @st.experimental_memo
 def load_annotated_data_by_id():
