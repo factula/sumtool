@@ -126,69 +126,92 @@ _bert score:_ **TODO**
 
     st.subheader("Summary-Source Links")
 
+    # Settings
     selected_summsrc = str(
         st.selectbox(
             "Select summary source", options=["Gold"] + sorted(df_factuality.index)
         )
     )
+    min_span_len = st.number_input("Minimum highlight length", min_value=1, value=3)
+    filter_overlaps = st.checkbox("Filter out overlaps", value=True)
+
     # Save the summary and source texts
     selected_summsrc_summ = selected_faithfulness[
         selected_faithfulness.system == selected_summsrc
     ].iloc[0]["summary"]
     selected_summsrc_src = selected_data["document"]
 
-    # Do a search for spans (length>=2) in summary that are contained within the document
+    # Do a search for spans in summary that are contained within the document
     linked_spans = {}
-    # TODO can definitely be more efficient, this is extremely lazy
-    searching_spans = [(0, len(selected_summsrc_summ))]
-    # TODO use actual proper substring/token recognition
-    last_end = len(selected_summsrc_summ)
-    while last_end > 0:
-        new_spans = [
-            (i.start() + 1, i.end() - 1)
-            for i in re.finditer(
-                r"[ \".,'].*[ \".,']", selected_summsrc_summ[:last_end], overlapped=True
-            )
-        ] + [
-            (i.start(), i.end() - 1)
-            for i in re.finditer(
-                r"^.*[ \".,']", selected_summsrc_summ[:last_end], overlapped=True
-            )
-        ]
-        new_spans = sorted(set(new_spans), key=lambda x: x[0])
-        searching_spans += new_spans
-        searching_spans = [e for e in searching_spans if e[1] - e[0] >= 3]
-        if len(new_spans) == 0:
-            break
-        last_end = new_spans[-1][0] + 1
-    searching_spans = sorted(set(searching_spans), key=lambda x: x[0])
+    # TODO can definitely be more efficient, this is extremely naive
+
+    def searching_spans_gen(selected_summsrc_summ, min_span_len):
+        searching_spans = [(0, len(selected_summsrc_summ))]
+        # TODO use actual proper substring/token recognition
+        last_end = len(selected_summsrc_summ)
+        while last_end > 0:
+            new_spans = [
+                (i.start() + 1, i.end() - 1)
+                for i in re.finditer(
+                    r"[ \".,'\\/][^ \".,'\\/].*[ \".,'\\/]",
+                    selected_summsrc_summ[:last_end],
+                    overlapped=True,
+                )
+            ] + [
+                (i.start(), i.end() - 1)
+                for i in re.finditer(
+                    r"^[^ \".,']\\/.*[ \".,'\\/]",
+                    selected_summsrc_summ[:last_end],
+                    overlapped=True,
+                )
+            ]
+            new_spans = sorted(set(new_spans), key=lambda x: x[0])
+            searching_spans += [e for e in new_spans if e[1] - e[0] >= min_span_len]
+            if len(new_spans) == 0:
+                last_end = 0
+                break
+            last_end -= 1
+        searching_spans = sorted(set(searching_spans), key=lambda x: x[0])
+        return searching_spans
+
+    searching_spans = searching_spans_gen(selected_summsrc_summ, min_span_len)
     # scan through every substring/token span for matches
     for (i, j) in searching_spans:
-        match_list = [
-            (i.start() + 1, i.end() - 1)
-            for i in re.finditer(
-                r"[ \".,']" + selected_summsrc_summ[i:j] + r"[ \".,']",
-                selected_summsrc_src,
-                re.IGNORECASE,
-            )
-        ] + [
-            (i.start(), i.end() - 1)
-            for i in re.finditer(
-                r"^" + selected_summsrc_summ[i:j] + r"[ \".,']",
-                selected_summsrc_src,
-                re.IGNORECASE,
-            )
-        ]
-        match_list = sorted(set(match_list), key=lambda x: x[0])
-        if len(match_list) > 0:
-            linked_spans[(i, j)] = match_list
-    # pick what span matches to prioritize highlighting
-    # TODO: currently prioritizing span length solely, excluding shorter spans that overlap
+
+        def token_search(token, text):
+            match_list = [
+                (i.start() + 1, i.end() - 1)
+                for i in re.finditer(
+                    r"[ \".,'\\/]" + token + r"[ \".,'\\/]",
+                    text,
+                    re.IGNORECASE,
+                )
+            ] + [
+                (i.start(), i.end() - 1)
+                for i in re.finditer(
+                    r"^" + token + r"[ \".,'\\/]",
+                    text,
+                    re.IGNORECASE,
+                )
+            ]
+            match_list = sorted(set(match_list), key=lambda x: x[0])
+            return match_list
+
+        match_list_src = token_search(selected_summsrc_summ[i:j], selected_summsrc_src)
+        match_list_summ = token_search(
+            selected_summsrc_summ[i:j], selected_summsrc_summ
+        )
+        if len(match_list_src) > 0 and len(match_list_summ) > 0:
+            linked_spans[(i, j)] = {"src": match_list_src, "summ": match_list_summ}
+    # pick what span matches to prioritize highlights, based on descending span length
     searching_matches = sorted(linked_spans, key=lambda x: x[1] - x[0], reverse=True)
     # filter out overlapping highlights
+    # TODO this is slightly buggy considering there can be duplicate tokens in summ
     highlights = []
     for s in searching_matches:
-        if all([(s[1] <= h[0] or s[0] >= h[1]) for h in highlights]):
+        if (not filter_overlaps) or all(
+            [(s[1] <= h[0] or s[0] >= h[1]) for h in highlights]
+        ):
             highlights += [s]
     # render the search findings
     cm_color = iter(cm.rainbow(np.linspace(0, 1, len(highlights))))
@@ -197,17 +220,18 @@ _bert score:_ **TODO**
     for i in range(len(highlights)):
         tag = f"S{i}"
         c = next(cm_color)
-        ann_links_summ = annotation_overlap(
-            ann_links_summ,
-            highlights[i][0],
-            highlights[i][1],
-            (tag, tuple(c)),
-        )
-        for j in range(len(linked_spans[highlights[i]])):
+        for j in range(len(linked_spans[highlights[i]]["summ"])):
+            ann_links_summ = annotation_overlap(
+                ann_links_summ,
+                linked_spans[highlights[i]]["summ"][j][0],
+                linked_spans[highlights[i]]["summ"][j][1],
+                (tag, tuple(c)),
+            )
+        for j in range(len(linked_spans[highlights[i]]["src"])):
             ann_links_src = annotation_overlap(
                 ann_links_src,
-                linked_spans[highlights[i]][j][0],
-                linked_spans[highlights[i]][j][1],
+                linked_spans[highlights[i]]["src"][j][0],
+                linked_spans[highlights[i]]["src"][j][1],
                 (tag, tuple(c)),
             )
 
