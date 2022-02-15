@@ -160,7 +160,7 @@ _bert score:_ **TODO**
             ] + [
                 (i.start(), i.end() - 1)
                 for i in re.finditer(
-                    r"^[^ \".,']\\/.*[ \".,'\\/]",
+                    r"^[^ \".,'\\/].*[ \".,'\\/]",
                     selected_summsrc_summ[:last_end],
                     overlapped=True,
                 )
