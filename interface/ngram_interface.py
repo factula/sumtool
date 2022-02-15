@@ -31,7 +31,9 @@ def load_data_ngram_lookup():
     _ngram_lookup = NgramLookup(documents=_pp_documents)
 
     # build dictionary
-    _ngram_lookup.build_dictionary(vocabs_path=VOCABS_PATH, max_vocab_size=MAX_VOCAB_SIZE, save_flag=SAVE_FLAG)
+    _ngram_lookup.build_dictionary(
+        vocabs_path=VOCABS_PATH, max_vocab_size=MAX_VOCAB_SIZE, save_flag=SAVE_FLAG
+    )
 
     # build ngram dictionary
     _ngram_lookup.build_ngram_dictionary(
@@ -75,7 +77,8 @@ def render_ngram_interface():
         st.write("Unknown word in query")
     else:
         results = [
-            {"id": ids[doc_idx], "document": documents[doc_idx]} for doc_idx in matched_doc_idx
+            {"id": ids[doc_idx], "document": documents[doc_idx]}
+            for doc_idx in matched_doc_idx
         ]
         st.write("* %d documents matched" % len(results))
         st.write(results)

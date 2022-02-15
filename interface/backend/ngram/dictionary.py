@@ -68,7 +68,9 @@ class Dictionary:
         sorted_wrd_freq = self.sort_dict_by_value(self.wrd_freq)
 
         # new sorted_wrd_freq
-        new_sorted_wrd_freq = {self.get_unk_idx(): sorted_wrd_freq[self.get_unk_idx()]}  # put <unk> first
+        new_sorted_wrd_freq = {
+            self.get_unk_idx(): sorted_wrd_freq[self.get_unk_idx()]
+        }  # put <unk> first
 
         for i, (wrd_idx, freq) in enumerate(sorted_wrd_freq.items()):
             if i < max_vocab_size - 1:
@@ -79,8 +81,12 @@ class Dictionary:
                 pass
 
         assert len(new_sorted_wrd_freq) == max_vocab_size
-        new_wrd_freq = {new_wrd_idx: freq for new_wrd_idx, (old_wrd_idx, freq) in
-                        enumerate(new_sorted_wrd_freq.items())}  # reset index of sorted_wrd_freq
+        new_wrd_freq = {
+            new_wrd_idx: freq
+            for new_wrd_idx, (old_wrd_idx, freq) in enumerate(
+                new_sorted_wrd_freq.items()
+            )
+        }  # reset index of sorted_wrd_freq
         self.wrd_freq = new_wrd_freq  # reset wrd_freq
 
         # new wrd_to_idx
