@@ -77,7 +77,7 @@ def annotation_merge(ann):
 
 
 def annotation_render(
-    ann, func_text, func_color, max_count=3, render_presence=False, render_type=False
+    ann, func_text, func_color, max_overlap=3, render_presence=False, render_type=False
 ):
     return [
         (e[0])
@@ -85,7 +85,7 @@ def annotation_render(
         else (
             e[0],
             func_text(e[1]),
-            func_color(e[1], render_presence, render_type, max_count=max_count),
+            func_color(e[1], render_presence, render_type, max_overlap=max_overlap),
         )
         for e in ann
     ]
@@ -98,7 +98,7 @@ def annotation_text(feats):
     return f"{str(tag_avg)[:3]}:{len(feats)}"
 
 
-def annotation_color(feats, render_presence, render_type, max_count=3):
+def annotation_color(feats, render_presence, render_type, max_overlap=3):
     # Assume from the XSum data that there are up to 3 workers, with tags of 0/1
     def colorcombine(a, b, frac_a, render_type):
         if render_type:
@@ -121,7 +121,7 @@ def annotation_color(feats, render_presence, render_type, max_count=3):
     return cssify(
         (
             *colorcombine(ann_colors[1], ann_colors[0], tag_avg, render_type),
-            len(feats) / max_count,
+            len(feats) / max_overlap,
         )
     )
 
@@ -142,7 +142,7 @@ def render_faithfulness_annotation_legend(render_ann_presence, render_ann_hallty
                 ],
                 annotation_text,
                 annotation_color,
-                max_count=3,
+                max_overlap=3,
                 render_presence=render_ann_presence,
                 render_type=render_ann_halltype,
             )
@@ -167,7 +167,7 @@ def render_faithfulness_annotation_legend(render_ann_presence, render_ann_hallty
                 ],
                 annotation_text,
                 annotation_color,
-                max_count=3,
+                max_overlap=3,
                 render_presence=render_ann_presence,
                 render_type=render_ann_halltype,
             )
@@ -186,7 +186,7 @@ def render_faithfulness_annotation_legend(render_ann_presence, render_ann_hallty
                 ],
                 annotation_text,
                 annotation_color,
-                max_count=3,
+                max_overlap=3,
                 render_presence=render_ann_presence,
                 render_type=render_ann_halltype,
             )
@@ -208,7 +208,7 @@ def render_faithfulness_annotation_legend(render_ann_presence, render_ann_hallty
                 ],
                 annotation_text,
                 annotation_color,
-                max_count=3,
+                max_overlap=3,
                 render_presence=render_ann_presence,
                 render_type=render_ann_halltype,
             )
@@ -224,7 +224,7 @@ def render_faithfulness_annotation_legend(render_ann_presence, render_ann_hallty
                 ],
                 annotation_text,
                 annotation_color,
-                max_count=3,
+                max_overlap=3,
                 render_presence=render_ann_presence,
                 render_type=render_ann_halltype,
             )
@@ -247,7 +247,7 @@ def render_faithfulness_annotation_legend(render_ann_presence, render_ann_hallty
                 ],
                 annotation_text,
                 annotation_color,
-                max_count=3,
+                max_overlap=3,
                 render_presence=render_ann_presence,
                 render_type=render_ann_halltype,
             )
@@ -263,7 +263,7 @@ def render_faithfulness_annotation_legend(render_ann_presence, render_ann_hallty
                 ],
                 annotation_text,
                 annotation_color,
-                max_count=3,
+                max_overlap=3,
                 render_presence=render_ann_presence,
                 render_type=render_ann_halltype,
             )
@@ -282,7 +282,7 @@ def render_faithfulness_annotation_legend(render_ann_presence, render_ann_hallty
                 ],
                 annotation_text,
                 annotation_color,
-                max_count=6,
+                max_overlap=6,
                 render_presence=render_ann_presence,
                 render_type=render_ann_halltype,
             )
@@ -301,7 +301,7 @@ def render_faithfulness_annotation_legend(render_ann_presence, render_ann_hallty
                 ],
                 annotation_text,
                 annotation_color,
-                max_count=6,
+                max_overlap=6,
                 render_presence=render_ann_presence,
                 render_type=render_ann_halltype,
             )

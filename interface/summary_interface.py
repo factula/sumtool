@@ -10,7 +10,10 @@ from utils.faithfulness_annotations import (
 )
 import annotated_text
 import pandas as pd
+import numpy as np
 import regex as re
+# Colormap for varying-number annotations
+from matplotlib.pyplot import cm
 
 
 @st.experimental_memo
@@ -46,7 +49,7 @@ def render_summary_with_annotations(
             ann,
             annotation_text,
             annotation_color,
-            max_count=3,
+            max_overlap=3,
             render_presence=render_ann_presence,
             render_type=render_ann_halltype,
         )
@@ -167,13 +170,15 @@ _bert score:_ **TODO**
         if len(match_list) > 0:
             linked_spans[(i, j)] = match_list
     # pick what span matches to prioritize highlighting
-    # TODO: currently prioritizing span length solely, not sure how to handle overlapping matches
+    # TODO: currently prioritizing span length solely, excluding shorter spans that overlap
     searching_matches = sorted(linked_spans, key=lambda x: x[1] - x[0], reverse=True)
     # filter out overlapping highlights
     highlights = []
     for s in searching_matches:
         if all([(s[1] <= h[0] or s[0] >= h[1]) for h in highlights]):
             highlights += [s]
+    # highlights = [(summ_begin, summ_end)] where each tuple is a key in linked_spans
+    # linked_spans[(summ_begin, summ_end)] = [(src_begin1, src_end1), (src_begin2, src_end2)]
     # TODO: render the search findings
     st.write(
         [
@@ -186,6 +191,10 @@ _bert score:_ **TODO**
             for k in highlights
         ]
     )
+    cm_color = iter(cm.rainbow(np.linspace(0, 1, len(highlights))))
+    for i in range(len(highlights)):
+        c = next(cm_color)
+        st.write(str(c))
     st.write(selected_summsrc_summ)
 
 
