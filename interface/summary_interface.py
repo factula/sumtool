@@ -12,6 +12,7 @@ import annotated_text
 import pandas as pd
 import numpy as np
 import regex as re
+
 # Colormap for varying-number annotations
 from matplotlib.pyplot import cm
 
@@ -144,12 +145,12 @@ _bert score:_ **TODO**
     last_end = len(selected_summsrc_summ)
     while last_end > 0:
         new_spans = [
-            (i.start()+1, i.end()-1)
+            (i.start() + 1, i.end() - 1)
             for i in re.finditer(
                 r"[ \".,'].*[ \".,']", selected_summsrc_summ[:last_end], overlapped=True
             )
         ] + [
-            (i.start(), i.end()-1)
+            (i.start(), i.end() - 1)
             for i in re.finditer(
                 r"^.*[ \".,']", selected_summsrc_summ[:last_end], overlapped=True
             )
@@ -164,14 +165,18 @@ _bert score:_ **TODO**
     # scan through every substring/token span for matches
     for (i, j) in searching_spans:
         match_list = [
-            (i.start()+1, i.end()-1)
+            (i.start() + 1, i.end() - 1)
             for i in re.finditer(
-                r"[ \".,']"+selected_summsrc_summ[i:j]+r"[ \".,']", selected_summsrc_src, re.IGNORECASE
+                r"[ \".,']" + selected_summsrc_summ[i:j] + r"[ \".,']",
+                selected_summsrc_src,
+                re.IGNORECASE,
             )
         ] + [
-            (i.start(), i.end()-1)
+            (i.start(), i.end() - 1)
             for i in re.finditer(
-                r"^"+selected_summsrc_summ[i:j]+r"[ \".,']", selected_summsrc_src, re.IGNORECASE
+                r"^" + selected_summsrc_summ[i:j] + r"[ \".,']",
+                selected_summsrc_src,
+                re.IGNORECASE,
             )
         ]
         match_list = sorted(set(match_list), key=lambda x: x[0])
@@ -190,7 +195,7 @@ _bert score:_ **TODO**
     ann_links_summ = [[selected_summsrc_summ, set()]]
     ann_links_src = [[selected_summsrc_src, set()]]
     for i in range(len(highlights)):
-        tag = f'S{i}'
+        tag = f"S{i}"
         c = next(cm_color)
         ann_links_summ = annotation_overlap(
             ann_links_summ,
@@ -203,14 +208,17 @@ _bert score:_ **TODO**
                 ann_links_src,
                 linked_spans[highlights[i]][j][0],
                 linked_spans[highlights[i]][j][1],
-                (tag, tuple(c))
+                (tag, tuple(c)),
             )
+
     def link_tag(feats):
         return list(feats)[0][0]
+
     def link_color(feats, rp, rt, max_overlap):
         f = list(feats)[0][1]
         m = 156
         return f"rgba({m*f[0]}, {m*f[1]}, {m*f[2]}, {f[3]})"
+
     annotated_text.annotated_text(
         *annotation_render(
             ann_links_summ,
