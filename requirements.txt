@@ -4,4 +4,4 @@ watchdog==2.1.6
 st-annotated-text==3.0.0
 transformers==4.16.0
 torch==1.10.0
-tqdm~=4.62.3
+seaborn==0.11.2
