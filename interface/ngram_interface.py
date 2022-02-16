@@ -6,7 +6,7 @@ from datasets import load_dataset
 from backend.ngram import NgramLookup, preprocess
 
 # parameters
-DOC_LEN = 10000  # to test on smaller dataset
+DOC_LEN = 200000  # to test on smaller dataset
 CURRENT_PATH = dirname(realpath(__file__))  # current file path
 VOCABS_PATH = join(CURRENT_PATH, "backend/ngram/cache/vocabs")  # vocab file path
 NGRAM_PATH = join(CURRENT_PATH, "backend/ngram/cache/ngram_dict_%d.pkl")
@@ -28,22 +28,22 @@ def load_data_ngram_lookup():
     _pp_documents = list(map(preprocess, _documents))
 
     # ngram lookup
-    _ngram_lookup = NgramLookup(documents=_pp_documents)
+    ngram_lookup = NgramLookup(documents=_pp_documents)
 
     # build dictionary
-    _ngram_lookup.build_dictionary(
+    ngram_lookup.build_dictionary(
         vocabs_path=VOCABS_PATH, max_vocab_size=MAX_VOCAB_SIZE, save_flag=SAVE_FLAG
     )
 
     # build ngram dictionary
-    _ngram_lookup.build_ngram_dictionary(
+    ngram_lookup.build_ngram_dictionary(
         ngram_path=NGRAM_PATH, max_n=MAX_N, save_flag=SAVE_FLAG
     )
 
     # clear memory
-    del _ngram_lookup.documents
+    del ngram_lookup.documents
 
-    return _documents, _ids, _ngram_lookup
+    return _documents, _ids, ngram_lookup
 
 
 @st.experimental_memo

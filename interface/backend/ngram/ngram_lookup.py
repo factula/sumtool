@@ -80,12 +80,15 @@ class NgramLookup:
         """
 
         for n in range(1, max_n + 1):
-            if exists(ngram_path % n):
-                self.load_ngram_dict(n=n, file_path=ngram_path % n)
-            else:
-                self.build_ngrams(n=n)
-                if save_flag:
-                    self.save_ngram_dict(n=n, file_path=ngram_path % n)
+            if n != 3: continue
+            self.build_ngrams(n=n)
+            # if exists(ngram_path % n):
+            #     self.load_ngram_dict(n=n, file_path=ngram_path % n)
+            # else:
+            #     self.build_ngrams(n=n)
+            #     if save_flag:
+            #         self.save_ngram_dict(n=n, file_path=ngram_path % n
+                    # )
 
         # check if dictionaries are built
         assert all(
@@ -112,18 +115,43 @@ class NgramLookup:
 
         print("Generating %d-gram dictionary from documents" % n)
 
-        ngram_to_idx_set = defaultdict(set)
+        # ngram_to_idx_set = defaultdict(set)
+        from microdict import mdict
+        ngram_to_idx_count = mdict.create("i64:i32")
+        ngram_to_idx_set = mdict.create("i64:i32")
+        doc_table = []
 
         for doc_idx, doc in enumerate(tqdm(self.documents)):
-            indices = [self.dictionary.get_idx_by_wrd(word) for word in doc]
-            _ngrams = [
-                indices[k:] for k in range(n)
-            ]  # if n=3, [indices, indices[1:], indices[2:]]
+            indices = [self.dictionary.get_idx_by_wrd(word)
+                       for word in doc]
+            start = 0
+            MAX = self.dictionary.idx
+            for i in indices:
+                start = start % (MAX * MAX)
+                start = MAX * start + i
+                if start not in ngram_to_idx_count:
+                    ngram_to_idx_count[start] = 0
+                else:
+                    ngram_to_idx_count[start] += 1 
+                # if start not in ngram_to_idx_set:
+                #     ngram_to_idx_set[start] = len(doc_table)
+                #     doc_table.append(doc_idx)
+                # else:
+                #     idx = ngram_to_idx_set[start]
+                #     if not isinstance(doc_table[idx], set):
+                #         doc_table[idx] = set([doc_table[idx]])
+                #     doc_table[idx].add(doc_idx)
 
-            for ngram in zip(*_ngrams):
-                # do not add ngram if "<unk>" in ngram
-                if self.dictionary.get_unk_idx() not in ngram:
-                    ngram_to_idx_set[ngram].add(doc_idx)
+            if doc_idx % 1000 == 0:
+                print(doc_idx, len(ngram_to_idx_set))
+            # ngrams = [
+            #     indices[k:] for k in range(n)
+            # ]  # if n=3, [indices, indices[1:], indices[2:]]
+
+            # for ngram in zip(*_ngrams):
+            #     # do not add ngram if "<unk>" in ngram
+            #     if self.dictionary.get_unk_idx() not in ngram:
+            #         ngram_to_idx_set[ngram].add(doc_idx)
 
         print("%d-gram dictionary length: %d" % (n, len(ngram_to_idx_set)))
         self.ngrams_root[n] = ngram_to_idx_set
@@ -188,3 +216,4 @@ class NgramLookup:
 
         # Case 2: return matched document indices
         return {"case": 2, "match": matched_doc_idx}
+    
