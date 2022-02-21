@@ -1,5 +1,4 @@
 import streamlit as st
-import torch
 from sumtool import predict_xsum_summary
 from backend.viz_data_loader import load_annotated_data_by_id
 import pandas as pd
