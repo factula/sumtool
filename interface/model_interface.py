@@ -33,17 +33,17 @@ def render_model_interface():
         st.dataframe(pd.DataFrame(
             summary_analysis,
             columns=[
-                "Selected Token (id)" ,
-                "Prob",
+                "Token (id)" ,
+                "Token Prob",
                 "Beam idx",
                 "Local Entropy",
                 "In Source Doc?",
-                "B1 Top 1",
-                "B1 Top 1 Prob",
-                "B1 Top 2",
-                "B1 Top 2 Prob",
-                "B1 Top 3",
-                "B1 Top 3 Prob",
+                "Token 1",
+                "Token 1 Prob",
+                "Token 2",
+                "Token 2 Prob",
+                "Token 3",
+                "Token 3 Prob",
             ]
         ))
 

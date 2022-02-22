@@ -3,8 +3,8 @@ import torch
 import datasets
 from typing import Tuple
 from sumtool.xsum_dataset import XsumDataset
-from transformers import BartTokenizer, BartForConditionalGeneration, BeamSearchScorer, LogitsProcessor, LogitsProcessorList, MinLengthLogitsProcessor, StoppingCriteriaList
-from scipy.stats import entropy
+from transformers import BartTokenizer, BartForConditionalGeneration
+from sumtool.utils import entropy
 
 
 def load_summarization_model_and_tokenizer(
@@ -24,15 +24,6 @@ def load_summarization_model_and_tokenizer(
     model.to(device)
 
     return model, tokenizer
-
-
-def calculate_entropy(seq_scores):
-    return torch.vstack([
-        torch.tensor(entropy(torch.nn.functional.softmax(
-            scores
-        ), axis=1))
-        for scores in seq_scores
-    ])
 
 
 def predict_summary(
@@ -106,7 +97,7 @@ def predict_summary(
                 prediction_analysis.append((
                     output_token_id.item(),
                     tokenizer.decode(output_token_id),
-                    entropy(probs),
+                    entropy(probs).item(),
                     output_token_id in input_set
                 ))
         else:
@@ -125,7 +116,7 @@ def predict_summary(
                     f"{tokenizer.decode(output_token_id)} ({beam_token_id.item()})",
                     beam_probs[output_token_id].item(),
                     beam_idx.item(),
-                    entropy(beam_probs).round(3),
+                    entropy(beam_probs).item(),
                     output_token_id in input_set,
                     *alternatives
                 ))
