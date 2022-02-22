@@ -15,7 +15,7 @@ def score_each(hyps, refs, metric="bertscore", model_type="microsoft/deberta-xla
     Returns:
         precisions, recalls, fmeasures
 
-    :raises:
+    Raises:
         ValueError: if the metirc is not implemented
     """
 
