@@ -8,9 +8,9 @@ def prepare_data_for_view(data):
     for system in data["factuality_data"].keys():
         labels = data["factuality_data"][system]["labels"]
         factuality_data[system] = data["factuality_data"][system]
-        factuality_data[system]["mean_worker_factuality_score"] = (
-            sum(labels.values()) / len(labels)
-        )
+        factuality_data[system]["mean_worker_factuality_score"] = sum(
+            labels.values()
+        ) / len(labels)
 
     flat_faithfulness_data = []
     for val in data["faithfulness_data"].values():
@@ -26,7 +26,7 @@ def prepare_data_for_view(data):
     return {
         "document": data["document"],
         "factuality_data": factuality_data,
-        "faithfulness_data": flat_faithfulness_data
+        "faithfulness_data": flat_faithfulness_data,
     }
 
 
@@ -35,7 +35,7 @@ def load_annotated_data_by_id():
     dataset = XsumDataset(
         load_dataset("xsum")["test"],
         factuality_data=load_dataset("xsum_factuality")["train"],
-        faithfulness_data=load_dataset("xsum_factuality", "xsum_faithfulness")["train"]
+        faithfulness_data=load_dataset("xsum_factuality", "xsum_faithfulness")["train"],
     )
     view_dataset = {
         k: prepare_data_for_view(v)
