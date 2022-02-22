@@ -1,20 +1,22 @@
 import string
+import numpy as np
+import pandas as pd
 import regex as rx
-import pickle
 from os.path import exists
 
-from collections import defaultdict
 from tqdm import tqdm  # progress bar
 
-from .dictionary import Dictionary
+# added
+from memory_profiler import profile
+from os.path import dirname, realpath, join
+from datasets import load_dataset
 
-# from nltk.tokenize import word_tokenize, RegexpTokenizer
-#
-# def preprocess(text):
-#     tokenizer = RegexpTokenizer(r"\w+")
-#     pp_text = tokenizer.tokenize(text)
-#     words = [word.lower() for word in pp_text]
-#     return words
+import threading
+
+import pyarrow as pa
+from microdict import mdict
+
+from .dictionary import Dictionary  # add . for streamlit
 
 
 def preprocess(text):
@@ -31,7 +33,7 @@ def preprocess(text):
     out = rx.sub(r"\p{C}", " ", out)
 
     # split into list
-    out = out.strip().split()
+    # out = out.strip().split()
 
     return out
 
@@ -45,6 +47,7 @@ class NgramLookup:
         self.documents = documents
 
         self.dictionary = Dictionary()
+        self.unk_idx = 0
         self.ngrams_root = {}
 
     def build_dictionary(self, vocabs_path, max_vocab_size, save_flag=True):
@@ -80,15 +83,12 @@ class NgramLookup:
         """
 
         for n in range(1, max_n + 1):
-            if n != 3: continue
-            self.build_ngrams(n=n)
-            # if exists(ngram_path % n):
-            #     self.load_ngram_dict(n=n, file_path=ngram_path % n)
-            # else:
-            #     self.build_ngrams(n=n)
-            #     if save_flag:
-            #         self.save_ngram_dict(n=n, file_path=ngram_path % n
-                    # )
+            if exists(ngram_path % n):
+                self.load_ngram_dict(n=n, file_path=ngram_path % n)
+            else:
+                self.build_ngrams(n=n)
+                if save_flag:
+                    self.save_ngram_dict(n=n, file_path=ngram_path % n)
 
         # check if dictionaries are built
         assert all(
@@ -115,46 +115,51 @@ class NgramLookup:
 
         print("Generating %d-gram dictionary from documents" % n)
 
-        # ngram_to_idx_set = defaultdict(set)
-        from microdict import mdict
-        ngram_to_idx_count = mdict.create("i64:i32")
+        # pyarrow
         ngram_to_idx_set = mdict.create("i64:i32")
         doc_table = []
 
+        MAX = self.dictionary.idx
+
         for doc_idx, doc in enumerate(tqdm(self.documents)):
-            indices = [self.dictionary.get_idx_by_wrd(word)
-                       for word in doc]
+            indices = [self.dictionary.get_idx_by_wrd(word) for word in doc.split()]
             start = 0
-            MAX = self.dictionary.idx
-            for i in indices:
-                start = start % (MAX * MAX)
+
+            for idx, i in enumerate(indices):
+                if i == self.unk_idx:  # <unk>
+                    start = 0
+                    continue
+
+                start = start % (MAX ** (n - 1))
                 start = MAX * start + i
-                if start not in ngram_to_idx_count:
-                    ngram_to_idx_count[start] = 0
+
+                if start < (MAX ** (n - 1)):
+                    # print("too early, continue")
+                    continue
+
+                # use doc_table as [set or int], and ngram_to_idx_set as {ngram: idx}
+                if start not in ngram_to_idx_set:
+                    ngram_to_idx_set[start] = len(doc_table)
+                    doc_table.append(set([doc_idx]))
                 else:
-                    ngram_to_idx_count[start] += 1 
-                # if start not in ngram_to_idx_set:
-                #     ngram_to_idx_set[start] = len(doc_table)
-                #     doc_table.append(doc_idx)
-                # else:
-                #     idx = ngram_to_idx_set[start]
-                #     if not isinstance(doc_table[idx], set):
-                #         doc_table[idx] = set([doc_table[idx]])
-                #     doc_table[idx].add(doc_idx)
+                    idx = ngram_to_idx_set[start]
+                    doc_table[idx].add(doc_idx)
 
-            if doc_idx % 1000 == 0:
-                print(doc_idx, len(ngram_to_idx_set))
-            # ngrams = [
-            #     indices[k:] for k in range(n)
-            # ]  # if n=3, [indices, indices[1:], indices[2:]]
+        ngram = pa.array([k for k in ngram_to_idx_set], pa.int64())
+        doc_idx_list = pa.array([list(doc) for doc in doc_table], pa.list_(pa.int32()))
 
-            # for ngram in zip(*_ngrams):
-            #     # do not add ngram if "<unk>" in ngram
-            #     if self.dictionary.get_unk_idx() not in ngram:
-            #         ngram_to_idx_set[ngram].add(doc_idx)
+        table = pa.Table.from_arrays(
+            [ngram, doc_idx_list],
+            schema=pa.schema(
+                [
+                    pa.field("ngram", ngram.type),
+                    pa.field("doc_idx_list", doc_idx_list.type),
+                ]
+            ),
+        )
 
         print("%d-gram dictionary length: %d" % (n, len(ngram_to_idx_set)))
-        self.ngrams_root[n] = ngram_to_idx_set
+        self.ngrams_root[n] = table
 
     def load_ngram_dict(self, n, file_path):
         """
@@ -166,8 +171,10 @@ class NgramLookup:
         """
 
         print("Loading %d-gram dictionary from '%s' ..." % (n, file_path))
-        with open(file_path, "rb") as f:
-            self.ngrams_root[n] = pickle.load(f)
+
+        # paquet
+        self.ngrams_root[n] = pa.parquet.read_table(source=file_path)
+        # print(self.ngrams_root[n])
         print("%d-gram dictionary length: %d" % (n, len(self.ngrams_root[n])))
 
     def save_ngram_dict(self, n, file_path):
@@ -180,15 +187,16 @@ class NgramLookup:
         """
 
         print("Saving %d-gram dictionary to '%s' ..." % (n, file_path))
-        with open(file_path, "wb") as f:
-            pickle.dump(self.ngrams_root[n], f, pickle.HIGHEST_PROTOCOL)
+
+        # parquet
+        pa.parquet.write_table(self.ngrams_root[n], file_path)
 
     def lookup(self, query_wrd):
         """
         lookup given query from ngram dictionary
 
         Args:
-            query_wrd: A tuple of query words
+            query_wrd: A list of query words
 
         Returns:
             A dictionary of {"case": int, "match": list}
@@ -196,24 +204,84 @@ class NgramLookup:
             - match: a list of matched document indices, empty if no match
         """
         print("Searching query...")
+        n = len(query_wrd)
 
         # Case 0: return if no query given
-        if len(query_wrd) == 0:
+        if n == 0:
             return {"case": 0, "match": []}
 
         # transform words into indices
         query_idx = self.dictionary.get_idx_by_wrd_multiple(query_wrd)
-        # print("query_idx:", query_idx)
+        print("query_idx:", query_idx)
 
         # Case 1: return if query includes <unk>
         if any(idx == self.dictionary.get_unk_idx() for idx in query_idx):
             return {"case": 1, "match": []}
 
         # lookup
-        matched_doc_idx = self.ngrams_root[len(query_wrd)][
-            query_idx
-        ]  # document indices
+        MAX = self.dictionary.idx
+        
+        ngram_int = 0
+        # ngram_int = query_idx[0] * (MAX ** 2) + query_idx[1] * (MAX ** 1) + query_idx[2] * (MAX ** 0)
+        for i, idx in enumerate(query_idx):
+            ngram_int += idx * (MAX ** (n - 1 - i))
+
+        df = self.ngrams_root[n].to_pandas()
+        matched_doc_idx = df.loc[df['ngram'] == ngram_int, "doc_idx_list"].item()
 
         # Case 2: return matched document indices
         return {"case": 2, "match": matched_doc_idx}
-    
+
+
+@profile
+def main():
+    CURRENT_PATH = dirname(realpath(__file__))  # current file path
+    VOCABS_PATH = join(CURRENT_PATH, "cache/vocabs")
+    NGRAM_PATH = join(CURRENT_PATH, "cache/ngram_dict_%d")
+    MAX_N = 4
+    MAX_VOCAB_SIZE = 10000
+    SAVE_FLAG = True
+
+    # TODO: replace it with sumtool
+    x_sum_dataset = load_dataset("xsum")
+    x_sum_dataset = x_sum_dataset["train"]
+
+    # Preprocess documents
+    print("Preprocessing documents...")
+    x_sum_dataset = x_sum_dataset.map(
+        lambda example: {"pp_document": preprocess(example["document"])}, num_proc=5
+    )
+
+    # ngram lookup
+    ngram_lookup = NgramLookup(documents=x_sum_dataset["pp_document"])
+
+    # build dictionary with multithreading
+    p = threading.Thread(
+        target=ngram_lookup.build_dictionary,
+        args=(VOCABS_PATH, MAX_VOCAB_SIZE, SAVE_FLAG),
+    )
+    p.start()
+    p.join()
+
+    # build ngram dictionary with multithreading
+    p2 = threading.Thread(
+        target=ngram_lookup.build_ngram_dictionary, args=(NGRAM_PATH, MAX_N, SAVE_FLAG)
+    )
+    p2.start()
+    p2.join()
+
+    # # this has to be moved to interface
+    # query = "to the"
+
+    # # preprocess query
+    # pp_query_wrd = tuple(preprocess(query).split())
+    # print(pp_query_wrd)
+
+    # # ngram lookup
+    # lookup_dict = ngram_lookup.lookup(query_wrd=pp_query_wrd)
+
+    # print(lookup_dict)
+
+
+if __name__ == "__main__":
+    main()
