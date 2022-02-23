@@ -10,9 +10,6 @@ def render_model_interface():
 
     st.header("Generate a Summary")
 
-    # Load the pretrained model
-    model, tokenizer = predict_xsum_summary.load_summarization_model_and_tokenizer()
-
     # Select/Input source document
     selected_id = str(
         st.selectbox("Select entry by bbcid", options=annotated_data_by_id.keys())
@@ -22,9 +19,6 @@ def render_model_interface():
     st.subheader("Source Document")
     st.write(source)
 
-    # Summarize source document
-    predicted_summary = predict_xsum_summary.predict_summary(model, tokenizer, source)
-
     # Ground Truth Summary
     selected_faithfulness = pd.DataFrame(selected_data["faithfulness_data"])
     g_summary = (
@@ -33,6 +27,14 @@ def render_model_interface():
 
     st.subheader("Ground Truth Summary")
     st.write(g_summary)
+
+    with st.spinner("Loading pre-trained model"):
+        model, tokenizer = predict_xsum_summary.load_summarization_model_and_tokenizer()
+
+    with st.spinner("Generating summary..."):
+        predicted_summary = predict_xsum_summary.predict_summary(
+            model, tokenizer, source
+        )
 
     # Output summarization
     st.subheader("Predicted Summary with BART XSUM Model")
