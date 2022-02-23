@@ -3,7 +3,7 @@ import torch
 import datasets
 from typing import Tuple
 from sumtool.xsum_dataset import XsumDataset
-
+from sumtool.cache import cache_model_summaries
 from transformers import BartTokenizer, BartForConditionalGeneration
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -46,18 +46,12 @@ def predict_summary(
         decoded_sentence
     """
     inputs = tokenizer(
-        text_to_summarize,
-        max_length=1024,
-        truncation=True,
-        return_tensors="pt",
+        text_to_summarize, max_length=1024, truncation=True, return_tensors="pt",
     )
     input_token_ids = inputs.input_ids.to(device)
 
     summary_ids = model.generate(
-        input_token_ids,
-        num_beams=4,
-        max_length=150,
-        early_stopping=True,
+        input_token_ids, num_beams=4, max_length=150, early_stopping=True,
     )
 
     predicted_summary = [
@@ -76,10 +70,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--bbc_id",
-        type=int,
-        required=True,
-        help="Document BBC ID in the Xsum dataset",
+        "--bbc_id", type=int, required=True, help="Document BBC ID in the Xsum dataset",
     )
 
     parser.add_argument(
@@ -101,3 +92,10 @@ if __name__ == "__main__":
 
     print("GOLD STANDARD SUMMARY:", xsum_example["true_summary"])
     print("PREDICTED SUMMARY:", summary)
+
+    cache_model_summaries(
+        "xsum",
+        model.config.name_or_path,
+        model.config.to_dict(),
+        {args.bbc_id: summary},
+    )
