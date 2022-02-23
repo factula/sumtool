@@ -50,7 +50,7 @@ class Dictionary:
         print("Building dictionary from corpus...")
         self.add_wrd(self.get_unk_wrd())  # add <unk> token
         for doc in tqdm(corpus):
-            for wrd in doc:
+            for wrd in doc.split():
                 self.add_wrd(wrd)
 
     def limit_max_vocab_size(self, max_vocab_size):
