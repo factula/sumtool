@@ -15,9 +15,6 @@ def load_summarization_model_and_tokenizer() -> Tuple[
     """
     Load summary generation model and move to GPU, if possible.
 
-    Args:
-        device: cpu or gpu
-
     Returns:
         (model, tokenizer)
     """
