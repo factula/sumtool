@@ -10,7 +10,7 @@ def storage_dir(dataset):
 
 def store_model_config(dataset: str, model: str, model_config: dict):
     model_config_json = json.dumps(model_config, sort_keys=True, indent=2)
-    model_config_hash = hashlib.md5().hexdigest()
+    model_config_hash = hashlib.md5(model_config_json.encode()).hexdigest()
 
     dir = f"{storage_dir(dataset)}/models"
     path = f"{dir}/{model.replace('/', '-')}-{model_config_hash}.json"
