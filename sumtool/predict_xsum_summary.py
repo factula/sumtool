@@ -32,6 +32,7 @@ def predict_summary(
     text_to_summarize: str,
     analyze_prediction: bool = False,
     num_beams: int = 4,
+    top_p_sampling: float = 1,
     device: torch.cuda.Device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ) -> str:
     """
@@ -68,7 +69,9 @@ def predict_summary(
         early_stopping=True,
         return_dict_in_generate=True,
         output_scores=True,
-        num_return_sequences=1
+        num_return_sequences=1,
+        top_p=top_p_sampling,
+        do_sample=top_p_sampling < 1
     )
 
     predicted_summary = [

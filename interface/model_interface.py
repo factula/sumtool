@@ -19,18 +19,21 @@ def render_model_interface():
     st.subheader("Document")
     st.write(xsum_example["document"])
 
-    num_beams = st.number_input("Number of beams", value=2)
-    
+    col1, col2 = st.columns(2)
+    num_beams = col1.number_input("Number of beams", value=2)
+    top_p_sampling = col2.number_input("Nucles (top-p) sampling", value=1)
+
     with st.spinner("Generating summary..."):
         summary, summary_analysis, score = predict_summary(
             model,
             tokenizer,
             xsum_example["document"],
             num_beams=num_beams,
-            analyze_prediction=True
+            analyze_prediction=True,
+            top_p_sampling=top_p_sampling
         )
-        st.write(f"Summary score: {score}")
-        st.dataframe(pd.DataFrame(
+        st.write(f"Summary Beam Score: {score}")
+        df_summary = pd.DataFrame(
             summary_analysis,
             columns=[
                 "Token (id)" ,
@@ -45,7 +48,9 @@ def render_model_interface():
                 "Token 3",
                 "Token 3 Prob",
             ]
-        ))
+        )
+        st.dataframe(df_summary)
+        # st.write(df_summary["Token Prob"].mean())
 
     st.subheader("Generated Summary")
     st.write(summary)
