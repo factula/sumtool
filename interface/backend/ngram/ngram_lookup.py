@@ -1,19 +1,17 @@
 import string
-import numpy as np
-import pandas as pd
 import regex as rx
 from os.path import exists
 
 from tqdm import tqdm  # progress bar
 
 # added
-from memory_profiler import profile
 from os.path import dirname, realpath, join
 from datasets import load_dataset
 
 import threading
 
 import pyarrow as pa
+import pyarrow.parquet as pq
 from microdict import mdict
 
 from .dictionary import Dictionary  # add . for streamlit
@@ -172,8 +170,8 @@ class NgramLookup:
 
         print("Loading %d-gram dictionary from '%s' ..." % (n, file_path))
 
-        # paquet
-        self.ngrams_root[n] = pa.parquet.read_table(source=file_path)
+        # parquet
+        self.ngrams_root[n] = pq.read_table(source=file_path)
         # print(self.ngrams_root[n])
         print("%d-gram dictionary length: %d" % (n, len(self.ngrams_root[n])))
 
@@ -189,7 +187,7 @@ class NgramLookup:
         print("Saving %d-gram dictionary to '%s' ..." % (n, file_path))
 
         # parquet
-        pa.parquet.write_table(self.ngrams_root[n], file_path)
+        pq.write_table(self.ngrams_root[n], file_path)
 
     def lookup(self, query_wrd):
         """
@@ -220,20 +218,20 @@ class NgramLookup:
 
         # lookup
         MAX = self.dictionary.idx
-        
+
         ngram_int = 0
         # ngram_int = query_idx[0] * (MAX ** 2) + query_idx[1] * (MAX ** 1) + query_idx[2] * (MAX ** 0)
         for i, idx in enumerate(query_idx):
             ngram_int += idx * (MAX ** (n - 1 - i))
 
         df = self.ngrams_root[n].to_pandas()
-        matched_doc_idx = df.loc[df['ngram'] == ngram_int, "doc_idx_list"].item()
+        matched_doc_idx = df.loc[df["ngram"] == ngram_int, "doc_idx_list"].item()
 
         # Case 2: return matched document indices
-        return {"case": 2, "match": matched_doc_idx}
+        return {"case": 2, "match": list(matched_doc_idx)}
 
 
-@profile
+# @profile
 def main():
     CURRENT_PATH = dirname(realpath(__file__))  # current file path
     VOCABS_PATH = join(CURRENT_PATH, "cache/vocabs")
@@ -270,17 +268,17 @@ def main():
     p2.start()
     p2.join()
 
-    # # this has to be moved to interface
-    # query = "to the"
+    # this has to be moved to interface
+    query = "even if"
 
-    # # preprocess query
-    # pp_query_wrd = tuple(preprocess(query).split())
-    # print(pp_query_wrd)
+    # preprocess query
+    pp_query_wrd = tuple(preprocess(query).split())
+    print(pp_query_wrd)
 
-    # # ngram lookup
-    # lookup_dict = ngram_lookup.lookup(query_wrd=pp_query_wrd)
+    # ngram lookup
+    lookup_dict = ngram_lookup.lookup(query_wrd=pp_query_wrd)
 
-    # print(lookup_dict)
+    print(lookup_dict)
 
 
 if __name__ == "__main__":

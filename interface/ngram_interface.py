@@ -12,31 +12,31 @@ from backend.ngram import NgramLookup, preprocess
 # parameters
 CURRENT_PATH = dirname(realpath(__file__))  # current file path
 VOCABS_PATH = join(CURRENT_PATH, "backend/ngram/cache/vocabs")  # vocab file path
-NGRAM_PATH = join(CURRENT_PATH, "backend/ngram/cache/ngram_dict_%d")
+NGRAM_PATH = join(CURRENT_PATH, "backend/ngram/cache_singlethread/ngram_dict_%d")
 MAX_N = 4
 MAX_VOCAB_SIZE = 10000
 # SAVE_FLAG = True
 
 # nl.main()
 
-file_path = str(join(CURRENT_PATH, "backend/ngram/ngram_lookup.py"))
-with open(file_path) as f:
-    code = compile(f.read(), file_path, 'exec')
-    exec(code)
+# file_path = str(join(CURRENT_PATH, "backend/ngram/ngram_lookup.py"))
+# with open(file_path) as f:
+#     code = compile(f.read(), file_path, 'exec')
+#     exec(code)
 
 # file_path = join(CURRENT_PATH, "backend/ngram/ngram_lookup.py")
 # print(file_path)
 # exec(open(file_path).read())
 
-# @profile
-def load_data_ngram_lookup():
-    # TODO: replace it with sumtool
+
+def load_xsum_dataset():
     x_sum_dataset = load_dataset("xsum")
     x_sum_dataset = x_sum_dataset["train"]
 
-    documents = x_sum_dataset["document"]
-    ids = x_sum_dataset["id"]
+    return x_sum_dataset
 
+
+def load_data_ngram_lookup():
     # vocab, ngram_dicts are already built
     assert exists(VOCABS_PATH), "Build vocab first"
     for n in range(1, MAX_N + 1):
@@ -51,25 +51,30 @@ def load_data_ngram_lookup():
     )
 
     # build ngram dictionary
-    ngram_lookup.build_ngram_dictionary(
-        ngram_path=NGRAM_PATH, max_n=MAX_N
-    )
+    ngram_lookup.build_ngram_dictionary(ngram_path=NGRAM_PATH, max_n=MAX_N)
 
-    # clear memory
-    # del ngram_lookup.documents
-
-    return documents, ids, ngram_lookup
+    return ngram_lookup
 
 
 @st.experimental_memo
-def cache_load_data_ngram_lookup():
-    return load_data_ngram_lookup()
+def cache_load_xsum_dataset():
+    return load_xsum_dataset()
 
 
-documents, ids, ngram_lookup = cache_load_data_ngram_lookup()
+# @st.experimental_memo
+# def cache_load_data_ngram_lookup():
+#     return load_data_ngram_lookup()
 
 
+x_sum_dataset = cache_load_xsum_dataset()
+# ngram_lookup = cache_load_data_ngram_lookup()
+
+
+@profile
 def render_ngram_interface():
+    # x_sum_dataset = load_xsum_dataset()
+    ngram_lookup = load_data_ngram_lookup()
+
     st.header("XSUM N-Gram Lookup")
 
     # input query
@@ -91,8 +96,13 @@ def render_ngram_interface():
     elif case == 1:  # <unk> in query
         st.write("Unknown word in query")
     else:
+        # st.write("case", case)
+        # st.write(matched_doc_idx)
         results = [
-            {"id": ids[doc_idx], "document": documents[doc_idx]}
+            {
+                "id": x_sum_dataset[int(doc_idx)]["id"],
+                "document": x_sum_dataset[int(doc_idx)]["document"],
+            }
             for doc_idx in matched_doc_idx
         ]
         st.write("* %d documents matched" % len(results))
