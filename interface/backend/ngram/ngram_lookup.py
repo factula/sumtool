@@ -14,7 +14,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from microdict import mdict
 
-from .dictionary import Dictionary  # add . for streamlit
+from dictionary import Dictionary  # add . for streamlit
 
 
 def preprocess(text):
@@ -91,7 +91,7 @@ class NgramLookup:
         # check if dictionaries are built
         assert all(
             len(self.ngrams_root[n]) for n in range(1, max_n + 1)
-        ), "ngram dictionaries were not built"
+        ), "ngram dictionaries are not built"
 
     def build_ngrams(self, n):
         """
@@ -113,38 +113,43 @@ class NgramLookup:
 
         print("Generating %d-gram dictionary from documents" % n)
 
-        # pyarrow
+        # maps from ngram_int_id to idx
         ngram_to_idx_set = mdict.create("i64:i32")
+        # list of document ids for idx
         doc_table = []
 
         MAX = self.dictionary.idx
 
         for doc_idx, doc in enumerate(tqdm(self.documents)):
             indices = [self.dictionary.get_idx_by_wrd(word) for word in doc.split()]
-            start = 0
 
-            for idx, i in enumerate(indices):
-                if i == self.unk_idx:  # <unk>
+            start = 0
+            for word_idx in indices:
+                if word_idx == self.unk_idx:  # if word is <unk>, pass
                     start = 0
                     continue
 
                 start = start % (MAX ** (n - 1))
-                start = MAX * start + i
+                start = MAX * start + word_idx
 
                 if start < (MAX ** (n - 1)):
                     # print("too early, continue")
                     continue
 
-                # use doc_table as [set or int], and ngram_to_idx_set as {ngram: idx}
+                # use doc_table as [set], and ngram_to_idx_set as {ngram: idx}
                 if start not in ngram_to_idx_set:
                     ngram_to_idx_set[start] = len(doc_table)
                     doc_table.append(set([doc_idx]))
-                else:
-                    idx = ngram_to_idx_set[start]
-                    doc_table[idx].add(doc_idx)
+                else:  # ngram already exists
+                    doc_table[ngram_to_idx_set[start]].add(doc_idx)
 
+        # transform into pyarrow.Table
         ngram = pa.array([k for k in ngram_to_idx_set], pa.int64())
-        doc_idx_list = pa.array([list(doc) for doc in doc_table], pa.list_(pa.int32()))
+        doc_idx_list = pa.array(
+            [list(doc_table[v]) for v in ngram_to_idx_set.values()],
+            pa.list_(pa.int32()),
+        )
+        # Important: need to align ngram_to_idx_set value and doc_table!
 
         table = pa.Table.from_arrays(
             [ngram, doc_idx_list],
@@ -170,7 +175,7 @@ class NgramLookup:
 
         print("Loading %d-gram dictionary from '%s' ..." % (n, file_path))
 
-        # parquet
+        # save as parquet
         self.ngrams_root[n] = pq.read_table(source=file_path)
         # print(self.ngrams_root[n])
         print("%d-gram dictionary length: %d" % (n, len(self.ngrams_root[n])))
@@ -216,7 +221,7 @@ class NgramLookup:
         if any(idx == self.dictionary.get_unk_idx() for idx in query_idx):
             return {"case": 1, "match": []}
 
-        # lookup
+        # Case 2: return matched document indices
         MAX = self.dictionary.idx
 
         ngram_int = 0
@@ -227,7 +232,6 @@ class NgramLookup:
         df = self.ngrams_root[n].to_pandas()
         matched_doc_idx = df.loc[df["ngram"] == ngram_int, "doc_idx_list"].item()
 
-        # Case 2: return matched document indices
         return {"case": 2, "match": list(matched_doc_idx)}
 
 
@@ -268,17 +272,18 @@ def main():
     p2.start()
     p2.join()
 
-    # this has to be moved to interface
-    query = "even if"
-
-    # preprocess query
-    pp_query_wrd = tuple(preprocess(query).split())
-    print(pp_query_wrd)
-
-    # ngram lookup
-    lookup_dict = ngram_lookup.lookup(query_wrd=pp_query_wrd)
-
-    print(lookup_dict)
+    # this has to be moved to "interface/ngram_interface.py"
+    # query = "to the"
+    #
+    # # preprocess query
+    # pp_query_wrd = tuple(preprocess(query).split())
+    # print(pp_query_wrd)
+    #
+    # # ngram lookup
+    # lookup_dict = ngram_lookup.lookup(query_wrd=pp_query_wrd)
+    #
+    # print(lookup_dict["case"])
+    # print(len(lookup_dict["match"]))
 
 
 if __name__ == "__main__":
