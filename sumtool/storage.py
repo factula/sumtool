@@ -1,7 +1,7 @@
 import json
 import hashlib
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 def storage_dir(dataset):
@@ -28,8 +28,8 @@ def store_model_summaries(
     model: str,
     model_config: Dict,
     generated_summaries: Dict[str, str],
-    tokens: List[int] = [],
-    token_entropy: List[float] = [],
+    tokens: Optional[List[int]] = None,
+    token_entropy: Optional[List[float]] = None,
 ):
     """
     Stores model summaries, indexed by dataset, model, model config hash & document id
