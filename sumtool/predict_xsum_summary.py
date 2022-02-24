@@ -3,7 +3,7 @@ import torch
 import datasets
 from typing import Tuple
 from sumtool.xsum_dataset import XsumDataset
-
+from sumtool.storage import store_model_summaries
 from transformers import BartTokenizer, BartForConditionalGeneration
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -101,3 +101,10 @@ if __name__ == "__main__":
 
     print("GOLD STANDARD SUMMARY:", xsum_example["true_summary"])
     print("PREDICTED SUMMARY:", summary)
+
+    store_model_summaries(
+        "xsum",
+        model.config.name_or_path,
+        model.config.to_dict(),
+        {args.bbc_id: summary},
+    )
