@@ -63,3 +63,27 @@ flake8 sumtool/ interface/ scripts/
 ```
 !python /content/generate_xsum_summary.py --bbc_ids [idx1,idx2] --data_split [train|test]
 ```
+
+### Storage documentation
+
+**Pipeline for storage:**
+1. Store generated summaries
+   - by generating them using a custom model ([example](sumtool/predict_xsum_summary.py))
+   - by loading them from an external dataset/paper ([example](scripts/store_xsum_annotated.py))
+2. Compute summary metrics for stored summaries using sumtool.
+
+![Storage Diagram](storage-diagram.jpg)
+
+#### `/data/<dataset>/<model-name>-summaries.json`
+	
+	<model_config_hash>: an identifier for the model config that was used to generate these summaries
+		<document_id>: 
+	        summary: the generated summary,
+		    metadata: ...metadata for the generated summary, i.e. annotations / score / entropy
+        
+      
+#### `/data/<dataset>/<model-name>-metrics.json`
+	
+	<model_config_hash>: an identifier for the model config that was used to generate these summaries
+		<document_id>: 
+            ...metrics for a stored summary, i.e. rouge-score, bert-score
