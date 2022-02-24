@@ -6,12 +6,12 @@ import streamlit as st
 from os.path import dirname, realpath, join
 from datasets import load_dataset
 
-from ..sumtool.ngram import NgramLookup, preprocess
+from sumtool.ngram import NgramLookup, preprocess
 
 # parameters
 CURRENT_PATH = dirname(realpath(__file__))  # current file path
-VOCABS_PATH = join(CURRENT_PATH, "backend/ngram/cache/vocabs")  # vocab file path
-NGRAM_PATH = join(CURRENT_PATH, "backend/ngram/cache/ngram_dict_%d")  # ngram file path
+VOCABS_PATH = join(CURRENT_PATH, "../sumtool/ngram/cache/vocabs")  # vocab file path
+NGRAM_PATH = join(CURRENT_PATH, "../sumtool/ngram/cache/ngram_dict_%d")  # ngram file path
 MAX_N = 4  # max n for ngram
 MAX_VOCAB_SIZE = 10000  # vocab size
 SAVE_FLAG = True  # whether to save vocab, ngram files
