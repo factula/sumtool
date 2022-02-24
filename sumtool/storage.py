@@ -1,7 +1,7 @@
 import json
 import hashlib
 import os
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 
 def storage_dir(dataset):
@@ -28,8 +28,7 @@ def store_model_summaries(
     model: str,
     model_config: Dict,
     generated_summaries: Dict[str, str],
-    tokens: Optional[List[int]] = None,
-    token_entropy: Optional[List[float]] = None,
+    metadata: Optional[Dict] = {},
 ):
     """
     Stores model summaries, indexed by dataset, model, model config hash & document id
@@ -43,8 +42,10 @@ def store_model_summaries(
         "<model-config-hash>": {
             "<document-id>": {
                 "summary": "this is awesome",
-                "tokens": [1, 2, 3]",
-                "token_entropy": [0.5, 0.3, 0.2]
+                "metadata": {
+                    "tokens_ids": [1, 2, 3]",
+                    "token_entropy": [0.5, 0.3, 0.2]
+                }
             }
         }
     }
@@ -54,8 +55,7 @@ def store_model_summaries(
         model: name of the model that was used to generate the summary (in huggingface model.config.name_or_path)
         model_config: dictionary of the config that was used to generate the summary (in huggingface serialize using model.config.to_dict())
         generated_summaries: dictionary of document id -> summary
-        tokens: optional list of token ids in the generated summary
-        token_entropy: optional list of local entropy for each generated tokens
+        metadata: optional dict containing metadata for the generated summaries, for example token ids & entropy
 
     """
 
@@ -73,14 +73,13 @@ def store_model_summaries(
     for document_id, summary in generated_summaries.items():
         if model_config_hash not in stored_summaries:
             stored_summaries[model_config_hash] = {}
-        stored_summaries[model_config_hash][document_id] = {
+        stored_summaries[model_config_hash][str(document_id)] = {
             "summary": summary,
-            "tokens": tokens,
-            "token_entropy": token_entropy,
+            "metadata": metadata,
         }
 
     with open(path, "w") as f:
-        f.write(json.dumps(stored_summaries, sort_keys=True, indent=2))
+        f.write(json.dumps(stored_summaries, indent=2))
 
 
 def store_summary_metrics(
@@ -130,7 +129,7 @@ def store_summary_metrics(
         stored_summaries[model_config_hash][document_id] = metrics
 
     with open(path, "w") as f:
-        f.write(json.dumps(stored_summaries, sort_keys=True, indent=2))
+        f.write(json.dumps(stored_summaries, indent=2))
 
 
 def store_summary_answers(
