@@ -2,19 +2,18 @@ import argparse
 import torch
 import datasets
 from typing import Tuple
-from xsum_dataset import XsumDataset
-
+from sumtool.xsum_dataset import XsumDataset
+from sumtool.storage import store_model_summaries
 from transformers import BartTokenizer, BartForConditionalGeneration
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def load_summarization_model_and_tokenizer(
-    device: torch.cuda.Device,
-) -> Tuple[BartForConditionalGeneration, BartTokenizer]:
+
+def load_summarization_model_and_tokenizer() -> Tuple[
+    BartForConditionalGeneration, BartTokenizer
+]:
     """
     Load summary generation model and move to GPU, if possible.
-
-    Args:
-        device: cpu or gpu
 
     Returns:
         (model, tokenizer)
@@ -93,9 +92,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    model, tokenizer = load_summarization_model_and_tokenizer(device)
+    model, tokenizer = load_summarization_model_and_tokenizer()
 
     xsum_train_data = XsumDataset(datasets.load_dataset("xsum")[args.data_split])
     xsum_example = xsum_train_data.query_by_bbc_id(args.bbc_id)
@@ -104,3 +101,10 @@ if __name__ == "__main__":
 
     print("GOLD STANDARD SUMMARY:", xsum_example["true_summary"])
     print("PREDICTED SUMMARY:", summary)
+
+    store_model_summaries(
+        "xsum",
+        model.config.name_or_path,
+        model.config.to_dict(),
+        {args.bbc_id: summary},
+    )
