@@ -11,11 +11,12 @@ def dataset_dir(dataset):
 
 
 def store_model_config(dataset: str, model: str, model_config: dict):
+    model_config["sumtool_name"] = model
     model_config_json = json.dumps(model_config, sort_keys=True, indent=2)
     model_config_hash = hashlib.md5(model_config_json.encode()).hexdigest()
 
     dir = f"{dataset_dir(dataset)}/models"
-    path = f"{dir}/{model.replace('/', '-')}-{model_config_hash}.json"
+    path = f"{dir}/{model_config_hash}.json"
 
     if not os.path.exists(path):
         os.makedirs(dir, exist_ok=True)

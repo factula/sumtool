@@ -82,6 +82,7 @@
   "static_position_embeddings": false,
   "student_decoder_layers": null,
   "student_encoder_layers": null,
+  "sumtool_name": "facebook/bart-large-xsum",
   "task_specific_params": {},
   "temperature": 1.0,
   "tie_encoder_decoder": false,
@@ -91,7 +92,7 @@
   "top_p": 1.0,
   "torch_dtype": null,
   "torchscript": false,
-  "transformers_version": "4.16.2",
+  "transformers_version": "4.16.0",
   "use_bfloat16": false,
   "use_cache": true,
   "vocab_size": 50264
