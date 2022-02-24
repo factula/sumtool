@@ -14,7 +14,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from microdict import mdict
 
-from dictionary import Dictionary  # add . for streamlit
+from .dictionary import Dictionary  # add . for streamlit
 
 
 def preprocess(text):

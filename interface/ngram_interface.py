@@ -1,32 +1,21 @@
+import threading
 from genericpath import exists
 import streamlit as st
 
-from memory_profiler import profile
+# from memory_profiler import profile
 from os.path import dirname, realpath, join
 from datasets import load_dataset
 
 from backend.ngram import NgramLookup, preprocess
 
-# import backend.ngram.ngram_lookup as nl
-
 # parameters
 CURRENT_PATH = dirname(realpath(__file__))  # current file path
 VOCABS_PATH = join(CURRENT_PATH, "backend/ngram/cache/vocabs")  # vocab file path
-NGRAM_PATH = join(CURRENT_PATH, "backend/ngram/cache_singlethread/ngram_dict_%d")
-MAX_N = 4
-MAX_VOCAB_SIZE = 10000
-# SAVE_FLAG = True
-
-# nl.main()
-
-# file_path = str(join(CURRENT_PATH, "backend/ngram/ngram_lookup.py"))
-# with open(file_path) as f:
-#     code = compile(f.read(), file_path, 'exec')
-#     exec(code)
-
-# file_path = join(CURRENT_PATH, "backend/ngram/ngram_lookup.py")
-# print(file_path)
-# exec(open(file_path).read())
+NGRAM_PATH = join(CURRENT_PATH, "backend/ngram/cache/ngram_dict_%d")  # ngram file path
+MAX_N = 4  # max n for ngram
+MAX_VOCAB_SIZE = 10000  # vocab size
+SAVE_FLAG = True  # whether to save vocab, ngram files
+NUM_PROC = 5  # # of processes to use for preprocessing
 
 
 def load_xsum_dataset():
@@ -36,7 +25,47 @@ def load_xsum_dataset():
     return x_sum_dataset
 
 
-def load_data_ngram_lookup():
+def build_ngram_lookup(x_sum_dataset):
+    # build vocab, ngram_dicts
+    # Preprocess documents
+    print("Preprocessing documents...")
+    x_sum_dataset = x_sum_dataset.map(
+        lambda example: {"pp_document": preprocess(example["document"])}, num_proc=5
+    )
+
+    # ngram lookup
+    ngram_lookup = NgramLookup(documents=x_sum_dataset["pp_document"])
+
+    # build dictionary with multithreading
+    p = threading.Thread(
+        target=ngram_lookup.build_dictionary,
+        args=(VOCABS_PATH, MAX_VOCAB_SIZE, SAVE_FLAG),
+    )
+    p.start()
+    p.join()
+
+    # build ngram dictionary with multithreading
+    p2 = threading.Thread(
+        target=ngram_lookup.build_ngram_dictionary, args=(NGRAM_PATH, MAX_N, SAVE_FLAG)
+    )
+    p2.start()
+    p2.join()
+
+    # ngram lookup
+    ngram_lookup = NgramLookup(documents=x_sum_dataset)
+
+    # build dictionary
+    ngram_lookup.build_dictionary(
+        vocabs_path=VOCABS_PATH, max_vocab_size=MAX_VOCAB_SIZE
+    )
+
+    # build ngram dictionary
+    ngram_lookup.build_ngram_dictionary(ngram_path=NGRAM_PATH, max_n=MAX_N)
+
+    return ngram_lookup
+
+
+def load_ngram_lookup():
     # vocab, ngram_dicts are already built
     assert exists(VOCABS_PATH), "Build vocab first"
     for n in range(1, MAX_N + 1):
@@ -62,18 +91,31 @@ def cache_load_xsum_dataset():
 
 
 # @st.experimental_memo
-# def cache_load_data_ngram_lookup():
-#     return load_data_ngram_lookup()
+# def cache_load_ngram_lookup():
+#     return load_ngram_lookup()
 
 
 x_sum_dataset = cache_load_xsum_dataset()
-# ngram_lookup = cache_load_data_ngram_lookup()
+# ngram_lookup = cache_load_ngram_lookup() # too large to cache
 
 
-@profile
+# @profile
 def render_ngram_interface():
-    # x_sum_dataset = load_xsum_dataset()
-    ngram_lookup = load_data_ngram_lookup()
+    # check if file exists
+    build_flag = False
+    if not exists(VOCABS_PATH):
+        build_flag = True
+    else:
+        for n in range(1, MAX_N + 1):
+            if not exists(NGRAM_PATH % n):
+                build_flag = True
+                break
+
+    # build or load ngram
+    if build_flag:
+        ngram_lookup = build_ngram_lookup(x_sum_dataset)
+    else:
+        ngram_lookup = load_ngram_lookup()
 
     st.header("XSUM N-Gram Lookup")
 
