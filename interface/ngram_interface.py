@@ -6,7 +6,7 @@ import streamlit as st
 from os.path import dirname, realpath, join
 from datasets import load_dataset
 
-from backend.ngram import NgramLookup, preprocess
+from ..sumtool.ngram import NgramLookup, preprocess
 
 # parameters
 CURRENT_PATH = dirname(realpath(__file__))  # current file path
