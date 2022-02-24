@@ -42,8 +42,8 @@ pip install -Ue .
 
 Before commiting:
 ```
-black sumtool/ interface/
-flake8 sumtool/ interface/
+black sumtool/ interface/ scripts/
+flake8 sumtool/ interface/ scripts/
 ```
 
 ### Run on Google Colab for GPU
@@ -59,7 +59,7 @@ flake8 sumtool/ interface/
 !pip install -r /content/summary-analysis/requirements.txt
 ```
 
-4. Add the following command to run the predictions script
+4. Add the following command to run the text generation script
 ```
-!python /content/predict_xsum_summary.py --data_index [some-data-index] --data_split [train|test]
+!python /content/generate_xsum_summary.py --bbc_ids [idx1,idx2] --data_split [train|test]
 ```

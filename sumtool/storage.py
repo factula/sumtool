@@ -1,7 +1,7 @@
 import json
 import hashlib
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 
 def storage_dir(dataset):
@@ -28,7 +28,7 @@ def store_model_summaries(
     model: str,
     model_config: Dict,
     generated_summaries: Dict[str, str],
-    metadata: Optional[Dict] = {},
+    metadata: Optional[Dict[str, Any]] = {},
 ):
     """
     Stores model summaries, indexed by dataset, model, model config hash & document id
@@ -75,7 +75,7 @@ def store_model_summaries(
             stored_summaries[model_config_hash] = {}
         stored_summaries[model_config_hash][str(document_id)] = {
             "summary": summary,
-            "metadata": metadata,
+            "metadata": metadata[document_id] if document_id in metadata else {},
         }
 
     with open(path, "w") as f:
@@ -86,7 +86,7 @@ def store_summary_metrics(
     dataset: str,
     model: str,
     model_config_hash: str,
-    summary_metrics: Dict[str, Dict[str, float]],  # document id -> {metric -> value}
+    summary_metrics: Dict[str, Dict[str, float]],
 ):
     """
     Stores summary metrics, indexed by dataset, model, model config hash & document id
