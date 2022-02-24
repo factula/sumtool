@@ -6,6 +6,11 @@ import pandas as pd
 annotated_data_by_id = load_annotated_data_by_id()
 
 
+@st.experimental_singleton
+def cache_load_summarization_model_and_tokenizer():
+    return generate_xsum_summary.load_summarization_model_and_tokenizer()
+
+
 def render_model_interface():
 
     st.header("Generate a Summary")
@@ -29,7 +34,7 @@ def render_model_interface():
     st.write(g_summary)
 
     with st.spinner("Loading pre-trained model"):
-        model, tokenizer = generate_xsum_summary.load_summarization_model_and_tokenizer()
+        model, tokenizer = cache_load_summarization_model_and_tokenizer()
 
     with st.spinner("Generating summary..."):
         predicted_summary = generate_xsum_summary.generate_summaries(

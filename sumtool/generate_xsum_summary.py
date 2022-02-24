@@ -40,7 +40,7 @@ def generate_summaries(
     Args:
         model: model to run inference on
         tokenizer: tokenizer corresponding to model
-        text_to_summarize: document to summarize
+        docs_to_summarize: documents to summarize
 
     Returns:
         decoded_sentence
@@ -50,7 +50,7 @@ def generate_summaries(
         max_length=1024,
         truncation=True,
         return_tensors="pt",
-        padding=True
+        padding=True,
     )
     input_token_ids = inputs.input_ids.to(device)
 
@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     summaries = generate_summaries(
         model,
-        tokenizer, 
+        tokenizer,
         [x["document"] for x in selected_data]
     )
 
