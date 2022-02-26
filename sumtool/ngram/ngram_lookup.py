@@ -1,10 +1,10 @@
 import string
+import enum
 import regex as rx
 from os.path import exists
 
 from tqdm import tqdm  # progress bar
 
-# added
 from os.path import dirname, realpath, join
 from datasets import load_dataset
 
@@ -14,7 +14,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from microdict import mdict
 
-from .dictionary import Dictionary  # add . for streamlit
+from .dictionary import Dictionary
 
 
 def preprocess(text):
@@ -221,7 +221,6 @@ class NgramLookup:
         if any(idx == self.dictionary.get_unk_idx() for idx in query_idx):
             return {"case": 1, "match": []}
 
-        # Case 2: return matched document indices
         MAX = self.dictionary.idx
 
         ngram_int = 0
@@ -230,9 +229,15 @@ class NgramLookup:
             ngram_int += idx * (MAX ** (n - 1 - i))
 
         df = self.ngrams_root[n].to_pandas()
-        matched_doc_idx = df.loc[df["ngram"] == ngram_int, "doc_idx_list"].item()
 
-        return {"case": 2, "match": list(matched_doc_idx)}
+        matched_doc_idx = df.loc[df["ngram"] == ngram_int, "doc_idx_list"]
+
+        if len(matched_doc_idx) == 0:
+            # Case 2: all words are in vocabs but no match found
+            return {"case": 2, "match": []}
+        else:
+            # Case 3: match found- return matched document indices
+            return {"case": 3, "match": list(matched_doc_idx.item())}
 
 
 # @profile

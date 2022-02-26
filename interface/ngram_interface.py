@@ -8,6 +8,7 @@ from backend.viz_ngram_loader import (
     load_xsum_dataset,
     load_ngram_lookup,
     build_ngram_lookup,
+    Case
 )
 
 # parameters
@@ -61,13 +62,11 @@ def render_ngram_interface():
 
     # write results
     st.write("**Search result:**")
-    if case == 0:  # no query given
+    if case == Case.no_query_given.value:
         st.write("No query given")
-    elif case == 1:  # <unk> in query
+    elif case == Case.unk_in_query.value:
         st.write("Unknown word in query")
     else:
-        # st.write("case", case)
-        # st.write(matched_doc_idx)
         results = [
             {
                 "id": x_sum_dataset[int(doc_idx)]["id"],
