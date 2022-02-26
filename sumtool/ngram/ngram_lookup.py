@@ -1,5 +1,4 @@
 import string
-import enum
 import regex as rx
 from os.path import exists
 

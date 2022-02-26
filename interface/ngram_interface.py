@@ -8,7 +8,7 @@ from backend.viz_ngram_loader import (
     load_xsum_dataset,
     load_ngram_lookup,
     build_ngram_lookup,
-    Case
+    Case,
 )
 
 # parameters
