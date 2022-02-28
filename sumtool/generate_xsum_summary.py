@@ -1,7 +1,7 @@
 import argparse
 import torch
 import datasets
-from typing import Tuple
+from typing import List, Tuple
 from sumtool.xsum_dataset import XsumDataset
 from sumtool.storage import store_model_summaries
 from transformers import BartTokenizer, BartForConditionalGeneration
@@ -25,10 +25,10 @@ def load_summarization_model_and_tokenizer() -> Tuple[
     return model, tokenizer
 
 
-def predict_summary(
+def generate_summaries(
     model: BartForConditionalGeneration,
     tokenizer: BartTokenizer,
-    text_to_summarize: str,
+    docs_to_summarize: List[str],
 ) -> str:
     """
     Given a trained summary generation model and appropriate tokenizer,
@@ -40,16 +40,17 @@ def predict_summary(
     Args:
         model: model to run inference on
         tokenizer: tokenizer corresponding to model
-        text_to_summarize: document to summarize
+        docs_to_summarize: documents to summarize
 
     Returns:
         decoded_sentence
     """
     inputs = tokenizer(
-        text_to_summarize,
+        docs_to_summarize,
         max_length=1024,
         truncation=True,
         return_tensors="pt",
+        padding=True,
     )
     input_token_ids = inputs.input_ids.to(device)
 
@@ -60,14 +61,14 @@ def predict_summary(
         early_stopping=True,
     )
 
-    predicted_summary = [
+    generated_summaries = [
         tokenizer.decode(
             id, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )
         for id in summary_ids
     ]
 
-    return predicted_summary[0]
+    return generated_summaries
 
 
 if __name__ == "__main__":
@@ -76,10 +77,10 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--bbc_id",
-        type=int,
+        "--bbc_ids",
+        type=str,
         required=True,
-        help="Document BBC ID in the Xsum dataset",
+        help="Comma-separated document BBC IDs in the Xsum dataset",
     )
 
     parser.add_argument(
@@ -94,17 +95,23 @@ if __name__ == "__main__":
 
     model, tokenizer = load_summarization_model_and_tokenizer()
 
-    xsum_train_data = XsumDataset(datasets.load_dataset("xsum")[args.data_split])
-    xsum_example = xsum_train_data.query_by_bbc_id(args.bbc_id)
+    xsum_data = XsumDataset(datasets.load_dataset("xsum")[args.data_split])
+    selected_data = [xsum_data.data_by_id[x.strip()] for x in args.bbc_ids.split(",")]
 
-    summary = predict_summary(model, tokenizer, xsum_example["document"])
+    summaries = generate_summaries(
+        model,
+        tokenizer,
+        [x["document"] for x in selected_data]
+    )
 
-    print("GOLD STANDARD SUMMARY:", xsum_example["true_summary"])
-    print("PREDICTED SUMMARY:", summary)
+    for source, gen_summary in zip(selected_data, summaries):
+        print("XSUM ID", source["id"])
+        print("GOLD STANDARD SUMMARY:", source["true_summary"])
+        print("PREDICTED SUMMARY:", gen_summary)
 
     store_model_summaries(
         "xsum",
         model.config.name_or_path,
         model.config.to_dict(),
-        {args.bbc_id: summary},
+        {source["id"]: gen_summary for source, gen_summary in zip(selected_data, summaries)},
     )

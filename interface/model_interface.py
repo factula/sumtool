@@ -1,9 +1,14 @@
 import streamlit as st
-from sumtool import predict_xsum_summary
+from sumtool import generate_xsum_summary
 from backend.viz_data_loader import load_annotated_data_by_id
 import pandas as pd
 
 annotated_data_by_id = load_annotated_data_by_id()
+
+
+@st.experimental_singleton
+def cache_load_summarization_model_and_tokenizer():
+    return generate_xsum_summary.load_summarization_model_and_tokenizer()
 
 
 def render_model_interface():
@@ -29,12 +34,12 @@ def render_model_interface():
     st.write(g_summary)
 
     with st.spinner("Loading pre-trained model"):
-        model, tokenizer = predict_xsum_summary.load_summarization_model_and_tokenizer()
+        model, tokenizer = cache_load_summarization_model_and_tokenizer()
 
     with st.spinner("Generating summary..."):
-        predicted_summary = predict_xsum_summary.predict_summary(
+        predicted_summary = generate_xsum_summary.generate_summaries(
             model, tokenizer, source
-        )
+        )[0]
 
     # Output summarization
     st.subheader("Predicted Summary with BART XSUM Model")
