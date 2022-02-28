@@ -24,7 +24,7 @@ def load_xsum_dataset():
 
 
 def build_ngram_lookup(
-    x_sum_dataset, vocabs_path, ngram_path, max_vocab_size, max_n, save_flag
+    x_sum_dataset, vocabs_path, ngram_path, max_vocab_size, min_n, max_n, save_flag
 ):
     # build vocab, ngram_dicts
     # Preprocess documents
@@ -46,29 +46,19 @@ def build_ngram_lookup(
 
     # build ngram dictionary with multithreading
     p2 = threading.Thread(
-        target=ngram_lookup.build_ngram_dictionary, args=(ngram_path, max_n, save_flag)
+        target=ngram_lookup.build_ngram_dictionary,
+        args=(ngram_path, min_n, max_n, save_flag),
     )
     p2.start()
     p2.join()
 
-    # ngram lookup
-    ngram_lookup = NgramLookup(documents=x_sum_dataset)
-
-    # build dictionary
-    ngram_lookup.build_dictionary(
-        vocabs_path=vocabs_path, max_vocab_size=max_vocab_size
-    )
-
-    # build ngram dictionary
-    ngram_lookup.build_ngram_dictionary(ngram_path=ngram_path, max_n=max_n)
-
     return ngram_lookup
 
 
-def load_ngram_lookup(vocabs_path, ngram_path, max_vocab_size, max_n):
+def load_ngram_lookup(vocabs_path, ngram_path, max_vocab_size, min_n, max_n):
     # vocab, ngram_dicts are already built
     assert exists(vocabs_path), "Build vocab first"
-    for n in range(1, max_n + 1):
+    for n in range(min_n, max_n + 1):
         assert exists(ngram_path % n), "Build %d-gram dictionary first"
 
     # ngram lookup
@@ -80,6 +70,6 @@ def load_ngram_lookup(vocabs_path, ngram_path, max_vocab_size, max_n):
     )
 
     # build ngram dictionary
-    ngram_lookup.build_ngram_dictionary(ngram_path=ngram_path, max_n=max_n)
+    ngram_lookup.build_ngram_dictionary(ngram_path=ngram_path, min_n=min_n, max_n=max_n)
 
     return ngram_lookup
