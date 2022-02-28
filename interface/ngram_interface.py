@@ -17,7 +17,8 @@ VOCABS_PATH = join(CURRENT_PATH, "../sumtool/ngram/cache/vocabs")  # vocab file 
 NGRAM_PATH = join(
     CURRENT_PATH, "../sumtool/ngram/cache/ngram_dict_%d"
 )  # ngram file path
-MAX_N = 4  # max n for ngram
+MIN_N = 1  # min n for ngram
+MAX_N = 2  # max n for ngram
 MAX_VOCAB_SIZE = 10000  # vocab size
 SAVE_FLAG = True  # whether to save vocab, ngram files
 NUM_PROC = 5  # # of processes to use for preprocessing
@@ -33,7 +34,7 @@ def render_ngram_interface():
     if not exists(VOCABS_PATH):
         build_flag = True
     else:
-        for n in range(1, MAX_N + 1):
+        for n in range(MIN_N, MAX_N + 1):
             if not exists(NGRAM_PATH % n):
                 build_flag = True
                 break
@@ -41,15 +42,15 @@ def render_ngram_interface():
     # build or load ngram
     if build_flag:
         ngram_lookup = build_ngram_lookup(
-            x_sum_dataset, VOCABS_PATH, NGRAM_PATH, MAX_VOCAB_SIZE, MAX_N, SAVE_FLAG
+            x_sum_dataset, VOCABS_PATH, NGRAM_PATH, MAX_VOCAB_SIZE, MIN_N, MAX_N, SAVE_FLAG
         )
     else:
-        ngram_lookup = load_ngram_lookup(VOCABS_PATH, NGRAM_PATH, MAX_VOCAB_SIZE, MAX_N)
+        ngram_lookup = load_ngram_lookup(VOCABS_PATH, NGRAM_PATH, MAX_VOCAB_SIZE, MIN_N, MAX_N)
 
     st.header("XSUM N-Gram Lookup")
 
     # input query
-    query = st.text_input("Input query string (1 to %d words):" % MAX_N)
+    query = st.text_input("Input query string (%d to %d words):" % (MIN_N, MAX_N))
 
     # preprocess query
     pp_query_wrd = tuple(preprocess(query).split())

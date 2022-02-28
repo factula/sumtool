@@ -67,19 +67,20 @@ class NgramLookup:
             if save_flag:
                 self.dictionary.save_as_file(file_path=vocabs_path)
 
-    def build_ngram_dictionary(self, ngram_path, max_n, save_flag=True):
+    def build_ngram_dictionary(self, ngram_path, min_n, max_n, save_flag=True):
         """
-        Build ngram dictionaries for n in (1, MAX_N + 1)
+        Build ngram dictionaries for n in (min_n, max_n + 1)
         if ngram file exists, load ngram from file
         else, build ngram from corpus and save to NGRAM_PATH
 
         Args:
             ngram_path: A string, path to ngram dictionaries file
+            min_n: An integer, minimum rank of the grams
             max_n: An integer, maximum rank of the grams
             save_flag: A boolean, whether to save as file
         """
 
-        for n in range(1, max_n + 1):
+        for n in range(min_n, max_n + 1):
             if exists(ngram_path % n):
                 self.load_ngram_dict(n=n, file_path=ngram_path % n)
             else:
@@ -89,7 +90,7 @@ class NgramLookup:
 
         # check if dictionaries are built
         assert all(
-            len(self.ngrams_root[n]) for n in range(1, max_n + 1)
+            len(self.ngrams_root[n]) for n in range(min_n, max_n + 1)
         ), "ngram dictionaries are not built"
 
     def build_ngrams(self, n):
@@ -244,6 +245,7 @@ def main():
     CURRENT_PATH = dirname(realpath(__file__))  # current file path
     VOCABS_PATH = join(CURRENT_PATH, "cache/vocabs")
     NGRAM_PATH = join(CURRENT_PATH, "cache/ngram_dict_%d")
+    MIN_N = 1
     MAX_N = 4
     MAX_VOCAB_SIZE = 10000
     SAVE_FLAG = True
@@ -271,7 +273,7 @@ def main():
 
     # build ngram dictionary with multithreading
     p2 = threading.Thread(
-        target=ngram_lookup.build_ngram_dictionary, args=(NGRAM_PATH, MAX_N, SAVE_FLAG)
+        target=ngram_lookup.build_ngram_dictionary, args=(NGRAM_PATH, MIN_N, MAX_N, SAVE_FLAG)
     )
     p2.start()
     p2.join()
