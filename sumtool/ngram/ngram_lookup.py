@@ -273,7 +273,8 @@ def main():
 
     # build ngram dictionary with multithreading
     p2 = threading.Thread(
-        target=ngram_lookup.build_ngram_dictionary, args=(NGRAM_PATH, MIN_N, MAX_N, SAVE_FLAG)
+        target=ngram_lookup.build_ngram_dictionary,
+        args=(NGRAM_PATH, MIN_N, MAX_N, SAVE_FLAG),
     )
     p2.start()
     p2.join()

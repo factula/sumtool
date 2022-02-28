@@ -46,7 +46,8 @@ def build_ngram_lookup(
 
     # build ngram dictionary with multithreading
     p2 = threading.Thread(
-        target=ngram_lookup.build_ngram_dictionary, args=(ngram_path, min_n, max_n, save_flag)
+        target=ngram_lookup.build_ngram_dictionary,
+        args=(ngram_path, min_n, max_n, save_flag),
     )
     p2.start()
     p2.join()

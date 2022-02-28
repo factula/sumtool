@@ -42,10 +42,18 @@ def render_ngram_interface():
     # build or load ngram
     if build_flag:
         ngram_lookup = build_ngram_lookup(
-            x_sum_dataset, VOCABS_PATH, NGRAM_PATH, MAX_VOCAB_SIZE, MIN_N, MAX_N, SAVE_FLAG
+            x_sum_dataset,
+            VOCABS_PATH,
+            NGRAM_PATH,
+            MAX_VOCAB_SIZE,
+            MIN_N,
+            MAX_N,
+            SAVE_FLAG,
         )
     else:
-        ngram_lookup = load_ngram_lookup(VOCABS_PATH, NGRAM_PATH, MAX_VOCAB_SIZE, MIN_N, MAX_N)
+        ngram_lookup = load_ngram_lookup(
+            VOCABS_PATH, NGRAM_PATH, MAX_VOCAB_SIZE, MIN_N, MAX_N
+        )
 
     st.header("XSUM N-Gram Lookup")
 
