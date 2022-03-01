@@ -18,7 +18,7 @@ NGRAM_PATH = join(
     CURRENT_PATH, "../sumtool/ngram/cache/ngram_dict_%d"
 )  # ngram file path
 MIN_N = 1  # min n for ngram
-MAX_N = 2  # max n for ngram
+MAX_N = 4  # max n for ngram
 MAX_VOCAB_SIZE = 10000  # vocab size
 SAVE_FLAG = True  # whether to save vocab, ngram files
 NUM_PROC = 5  # # of processes to use for preprocessing
