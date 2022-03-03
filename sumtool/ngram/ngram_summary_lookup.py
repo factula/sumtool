@@ -1,3 +1,4 @@
+from collections import defaultdict
 from os.path import exists
 
 from tqdm import tqdm  # progress bar
@@ -24,12 +25,16 @@ class NgramSummaryLookup:
         """
         Args:
             documents: A list of documents to build ngram upon
+            tokenizer: TODO
         """
         self.documents = documents
 
         self.tokenizer = tokenizer
         self.unk_idx = tokenizer.unk_token_id
         self.ngrams_root = {}
+
+        # key to build ngram int id
+        self.MAX = round(self.tokenizer.vocab_size, -5)  # bart tokenizer size is 50265
 
     def build_ngram_dictionary(self, ngram_path, min_n, max_n, save_flag=True):
         """
@@ -57,7 +62,7 @@ class NgramSummaryLookup:
             len(self.ngrams_root[n]) for n in range(min_n, max_n + 1)
         ), "ngram dictionaries are not built"
 
-    def build_ngram(self, n):  # now just bigram
+    def build_ngrams(self, n):  # now just bigram
         """
         Generate ngrams from the given dictionary and store them in a pyarrow.Table
 
@@ -78,8 +83,6 @@ class NgramSummaryLookup:
         # list of document ids for idx
         doc_table = []
 
-        MAX = round(self.tokenizer.vocab_size, -5)  # bart tokenizer size - 50265
-
         for doc_idx, doc in enumerate(tqdm(self.documents)):
             indices = self.tokenizer.encode(doc, add_special_tokens=False)
 
@@ -92,10 +95,10 @@ class NgramSummaryLookup:
                     start = 0
                     continue
 
-                start = start % (MAX ** (n - 1))
-                start = MAX * start + word_idx
+                start = start % (self.MAX ** (n - 1))
+                start = self.MAX * start + word_idx
 
-                if start < (MAX ** (n - 1)):
+                if start < (self.MAX ** (n - 1)):
                     # print("too early, continue")
                     continue
 
@@ -157,13 +160,13 @@ class NgramSummaryLookup:
         # save as parquet file
         pq.write_table(self.ngrams_root[n], file_path)
 
-    def lookup(self, query_idx, df):  # TODO
+    def lookup(self, query_idx, df):
         """
-        lookup given query from ngram dictionary
+        lookup given query from ngram dictionary (pandas dataframe)
 
         Args:
             query_idx: A list of query indices
-            df:
+            df: pa.Dataframe, TODO
 
         Returns: TODO
             A dictionary of {"case": int, "match": list}
@@ -181,14 +184,10 @@ class NgramSummaryLookup:
         if any(idx == self.unk_idx for idx in query_idx):
             return {"case": 1, "match": []}
 
-        MAX = round(
-            self.tokenizer.vocab_size, -5
-        )  # bart tokenizer size - 50265 # TODO: change it to self.MAX?
-
         ngram_int = 0
         # ngram_int = query_idx[0] * (MAX ** 2) + query_idx[1] * (MAX ** 1) + query_idx[2] * (MAX ** 0)
         for i, idx in enumerate(query_idx):
-            ngram_int += idx * (MAX ** (n - 1 - i))
+            ngram_int += idx * (self.MAX ** (n - 1 - i))
 
         matched_doc_idx = df.loc[df["ngram"] == ngram_int, "doc_idx_list"]
 
@@ -212,13 +211,22 @@ class NgramSummaryLookup:
             - case: which category given query belongs to
             - match: a list of matched document indices, empty if no match
         """
-        print("Looking up summary from the training set")
+        print("Looking up summary ngrams from the training set")
         summary_indices = self.tokenizer.encode(summary, add_special_tokens=False)
 
-        df = self.ngrams_root[n].to_pandas()  # TODO: change it to self.df?
+        df = self.ngrams_root[n].to_pandas()
 
+        result_dict_list = []
         for summary_ngram in zip(summary_indices, summary_indices[1:]):  # only bigram
-            self.lookup(summary_ngram, df)
+            result_dict = self.lookup(summary_ngram, df)
+            result_dict_list.append(
+                {
+                    "ngram": summary_ngram,
+                    "case": result_dict["case"],
+                    "match": result_dict["match"],
+                }
+            )
+        return result_dict_list
 
     def lookup_summary_from_document(self, summary, document, n):
         """
@@ -233,20 +241,46 @@ class NgramSummaryLookup:
             - case: which category given query belongs to
             - match: a list of matched document indices, empty if no match
         """
-        print("Looking up summary from the training set")
+        print("Looking up summary ngrams from the given document")
         summary_indices = self.tokenizer.encode(summary, add_special_tokens=False)
         document_indices = self.tokenizer.encode(document, add_special_tokens=False)
 
-        df = self.ngrams_root[n].to_pandas()  # TODO: change it to self.df?
+        # TODO: add word idx to document_ngram_dict?, now add count
+        document_ngram_dict = defaultdict(set)
+        for document_ngram in zip(
+            document_indices, document_indices[1:]
+        ):  # only bigram
+            if document_ngram in document_ngram_dict:
+                document_ngram_dict[document_ngram] += 1
+            else:
+                document_ngram_dict[document_ngram] = 1
 
-        # TODO: build document ngram dictionary
-        document_ngram_dictionary = dict()
+        # print(document_ngram_dict)
 
+        result_dict_list = []  # return count
         for summary_ngram in zip(summary_indices, summary_indices[1:]):  # only bigram
-            # lookup_from_dictionary(summary_ngram, df)
-            pass
+            # Case 1: return if query includes <unk>
+            if any(idx == self.unk_idx for idx in summary_ngram):
+                result_dict_list.append(
+                    {"ngram": summary_ngram, "case": 1, "match": []}
+                )
+                continue
 
-        return
+            # Case 2: all words are in vocabs but no match found
+            if summary_ngram not in document_ngram_dict:
+                result_dict_list.append(
+                    {"ngram": summary_ngram, "case": 2, "match": []}
+                )
+            else:
+                # Case 3: match found- return matched document indices
+                result_dict_list.append(
+                    {
+                        "ngram": summary_ngram,
+                        "case": 3,
+                        "match": document_ngram_dict[summary_ngram],
+                    }
+                )
+        return result_dict_list
 
 
 # @profile
@@ -259,6 +293,7 @@ def main():
 
     # TODO: replace it with sumtool
     x_sum_dataset = load_dataset("xsum")
+    # test_dataset = x_sum_dataset["test"]
     x_sum_dataset = x_sum_dataset["train"]
 
     # TODO: put tokenizer into NgramLookup?
@@ -279,7 +314,9 @@ def main():
     # )
 
     # ngram lookup
-    ngram_lookup = NgramSummaryLookup(documents=x_sum_dataset["document"])
+    ngram_lookup = NgramSummaryLookup(
+        documents=x_sum_dataset["document"], tokenizer=tokenizer
+    )
 
     # build ngram dictionary with multithreading
     p2 = threading.Thread(
@@ -290,11 +327,56 @@ def main():
     p2.join()
 
     # this has to be moved to interface
-    summary = None  # TODO
-    document = None  # TODO
+    document = (
+        "Prison Link Cymru had 1,099 referrals in 2015-16 and said some ex-offenders were living rough for up "
+        "to a year before finding suitable accommodation.\nWorkers at the charity claim investment in housing "
+        "would be cheaper than jailing homeless repeat offenders.\nThe Welsh Government said more people than "
+        "ever were getting help to address housing problems.\nChanges to the Housing Act in Wales, introduced "
+        "in 2015, removed the right for prison leavers to be given priority for accommodation.\nPrison Link "
+        "Cymru, which helps people find accommodation after their release, said things were generally good for "
+        "women because issues such as children or domestic violence were now considered.\nHowever, "
+        "the same could not be said for men, the charity said, because issues which often affect them, "
+        "such as post traumatic stress disorder or drug dependency, were often viewed as less of a "
+        "priority.\nAndrew Stevens, who works in Welsh prisons trying to secure housing for prison leavers, "
+        'said the need for accommodation was "chronic".\n"There\'s a desperate need for it, finding suitable '
+        'accommodation for those leaving prison there is just a lack of it everywhere," he said.\n"It could '
+        'take six months to a year, without a lot of help they could be on the streets for six months.\n"When '
+        "you think of the consequences of either being on the street, especially with the cold weather at the "
+        'moment or you may have a roof over your head, sometimes there is only one choice."\nMr Stevens '
+        'believes building more one-bedroom flats could help ease the problem.\n"The average price is a hundred '
+        "pounds a week to keep someone in a rented flat, prison is a lot more than that so I would imagine it "
+        'would save the public purse quite a few pounds," he said.\nOfficial figures show 830 one-bedroom '
+        "properties were built in the year to March 2016, of an overall total of 6,900 new properties in "
+        "Wales.\nMarc, 50, who has been in and out of prison for the past 20 years for burglary offences, "
+        "said he struggled to find accommodation each time he was released.\nHe said he would ask himself: "
+        '"Where am I going to stay? Where am I going to live? Have I got somewhere where I can see my '
+        'daughter."\n"You\'re put out among the same sort of people doing the same sort of thing, '
+        "and it's difficult, it's difficult to get away from it. It's like every man for himself, "
+        "there's nothing.\"\nMarc has now found stable accommodation with homeless charity Emmaus and said it "
+        "had been life changing.\n\"You feel safe, you got hot food, you've got company of people in similar "
+        "situations to yourself but all dealing with different issues. It's a constructive, "
+        'helpful atmosphere," he said.\nTom Clarke, chief executive of Emmaus South Wales, agreed there was not '
+        "enough support available.\n\"We do still see [people] homeless on the streets, so clearly they haven't "
+        'got accommodation and haven\'t got provision," he said.\n"I think the key is connecting people with '
+        "the services they need. I don't delude myself that Emmaus can offer a one size fits all for everyone, "
+        "we can't.\n\"But there must be other opportunities and given suitable encouragement I believe that can "
+        'and should happen."\nA Welsh Government spokesman said the national pathway for homeless services to '
+        "children, young people and adults in the secure estate had prevented many people from losing their "
+        "home whilst serving their prison sentence.\nIt added there were already significant demands for "
+        "one-bedroom flats across the public and private sector and it was providing 20,000 new affordable "
+        "homes in the next five years."
+    )
+    summary = 'There is a "chronic" need for more housing for prison leavers in Wales, according to a charity.'
 
-    ngram_lookup.lookup_summary_from_dataset(summary, n=2)  # only bigram
-    ngram_lookup.lookup_summary_from_document(summary, document, n=2)  # only bigram
+    summary_from_dataset = ngram_lookup.lookup_summary_from_dataset(summary, n=2)
+    summary_from_document = ngram_lookup.lookup_summary_from_document(
+        summary, document, n=2
+    )  # only bigram
+
+    # print(summary_from_dataset) # too long to print
+    # for l in summary_from_dataset:
+    #     print(l["ngram"], l["case"], len(l["match"]))
+    # print(summary_from_document)
 
 
 if __name__ == "__main__":
