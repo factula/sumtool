@@ -9,4 +9,4 @@ tqdm~=4.62.0
 regex~=2022.1.18
 pyarrow~=7.0.0
 microdict~=0.1.1
-.
+git+https://github.com/factula/sumtool
