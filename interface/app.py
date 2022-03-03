@@ -8,7 +8,7 @@ def render():
     pages = {
         "Explore Summarization Datasets": render_summary_interface,
         "Model Interface": render_model_interface,
-        "Ngram Interface": render_ngram_interface
+        "Ngram Interface": render_ngram_interface,
     }
 
     st.sidebar.title("CS6741 - Summary Analysis")

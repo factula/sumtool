@@ -99,9 +99,7 @@ if __name__ == "__main__":
     selected_data = [xsum_data.data_by_id[x.strip()] for x in args.bbc_ids.split(",")]
 
     summaries = generate_summaries(
-        model,
-        tokenizer,
-        [x["document"] for x in selected_data]
+        model, tokenizer, [x["document"] for x in selected_data]
     )
 
     for source, gen_summary in zip(selected_data, summaries):
@@ -113,5 +111,8 @@ if __name__ == "__main__":
         "xsum",
         model.config.name_or_path,
         model.config.to_dict(),
-        {source["id"]: gen_summary for source, gen_summary in zip(selected_data, summaries)},
+        {
+            source["id"]: gen_summary
+            for source, gen_summary in zip(selected_data, summaries)
+        },
     )
