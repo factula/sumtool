@@ -7,7 +7,10 @@ cache_summaries = storage.get_summaries("xsum", "facebook-bart-large-xsum")
 cache_summary_values = [*cache_summaries.values()][0]
 cache_keys = [x for x in [*cache_summary_values.keys()]]
 annotated_data_by_id = load_annotated_data_by_id()
-filtered_annotated_data_by_id = {k: annotated_data_by_id[k] for k in cache_keys if k in annotated_data_by_id}
+filtered_annotated_data_by_id = {
+    k: annotated_data_by_id[k] for k in cache_keys if k in annotated_data_by_id
+}
+
 
 @st.experimental_singleton
 def cache_load_summarization_model_and_tokenizer():
@@ -20,7 +23,9 @@ def render_model_interface():
 
     # Select/Input source document
     selected_id = str(
-        st.selectbox("Select entry by bbcid", options=filtered_annotated_data_by_id.keys())
+        st.selectbox(
+            "Select entry by bbcid", options=filtered_annotated_data_by_id.keys()
+        )
     )
     selected_data = filtered_annotated_data_by_id[selected_id]
     source = selected_data["document"]
