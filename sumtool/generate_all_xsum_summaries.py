@@ -76,43 +76,21 @@ if __name__ == "__main__":
         description="Script to run inference on an xsum example using a pre-trained model"
     )
 
-    parser.add_argument(
-        "--bbc_ids",
-        type=str,
-        required=True,
-        help="Comma-separated document BBC IDs in the Xsum dataset",
-    )
-
-    parser.add_argument(
-        "--data_split",
-        type=str,
-        required=True,
-        choices=["train", "test", "validation"],
-        help="xsum data split to index into with `data_index`",
-    )
-
-    args = parser.parse_args()
-
     model, tokenizer = load_summarization_model_and_tokenizer()
 
-    xsum_data = XsumDataset(datasets.load_dataset("xsum")[args.data_split])
-    selected_data = [xsum_data.data_by_id[x.strip()] for x in args.bbc_ids.split(",")]
+    xsum_data = XsumDataset(datasets.load_dataset("xsum")["test"])
+    total = len(xsum_data)
+    print(str(total) + " total documents to summarize")
+    i = 0
+    for x in xsum_data:
+        i += 1
+        gen_summary = generate_summaries(model, tokenizer, x["document"])
 
-    summaries = generate_summaries(
-        model, tokenizer, [x["document"] for x in selected_data]
-    )
-
-    for source, gen_summary in zip(selected_data, summaries):
-        print("XSUM ID", source["id"])
-        print("GOLD STANDARD SUMMARY:", source["true_summary"])
-        print("PREDICTED SUMMARY:", gen_summary)
-
-    store_model_summaries(
-        "xsum",
-        model.config.name_or_path,
-        model.config.to_dict(),
-        {
-            source["id"]: gen_summary
-            for source, gen_summary in zip(selected_data, summaries)
-        },
-    )
+        store_model_summaries(
+            "xsum",
+            model.config.name_or_path,
+            model.config.to_dict(),
+            {x["id"]: gen_summary},
+        )
+        if i % 10 == 0:
+            print(str(i) + " of " + str(total) + " summaries completed.")

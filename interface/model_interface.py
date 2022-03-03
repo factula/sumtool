@@ -1,5 +1,5 @@
 import streamlit as st
-from sumtool import generate_xsum_summary
+from sumtool import generate_xsum_summary, storage
 from backend.viz_data_loader import load_annotated_data_by_id
 import pandas as pd
 
@@ -33,13 +33,24 @@ def render_model_interface():
     st.subheader("Ground Truth Summary")
     st.write(g_summary)
 
-    with st.spinner("Loading pre-trained model"):
-        model, tokenizer = cache_load_summarization_model_and_tokenizer()
+    cache_summaries = storage.get_summaries("xsum", "facebook-bart-large-xsum")
+    cache_summary_values = [*cache_summaries.values()][0]
+    if selected_id in cache_summary_values:
+        predicted_summary = cache_summary_values[selected_id]["summary"][0]
+    else:
+        with st.spinner("Loading pre-trained model"):
+            model, tokenizer = cache_load_summarization_model_and_tokenizer()
 
-    with st.spinner("Generating summary..."):
-        predicted_summary = generate_xsum_summary.generate_summaries(
-            model, tokenizer, source
-        )[0]
+        with st.spinner("Generating summary..."):
+            predicted_summary = generate_xsum_summary.generate_summaries(
+                model, tokenizer, source
+            )[0]
+        storage.store_model_summaries(
+            "xsum",
+            model.config.name_or_path,
+            model.config.to_dict(),
+            {selected_id: predicted_summary},
+        )
 
     # Output summarization
     st.subheader("Predicted Summary with BART XSUM Model")
