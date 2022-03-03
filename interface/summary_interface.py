@@ -1,4 +1,5 @@
 import streamlit as st
+from backend.automatic_eval import round_trip_consistency
 from backend.viz_data_loader import load_annotated_data_by_id
 from utils.faithfulness_annotations import (
     annotation_overlap,
@@ -118,6 +119,20 @@ _bert score:_ **TODO**
             render_summary_with_annotations(
                 g_annotations, render_ann_presence, render_ann_halltype
             )
+        
+            # Add expandable automatic evaluation subpanel
+            with col2.expander("Automatic evaluation"):
+                st.write("##### Round-trip consistency")
+                with st.spinner("Computing round-trip consistency, please wait..."):
+                    rt_sum_answer, rt_question, rt_doc_answer = round_trip_consistency(
+                        document=selected_data["document"], summary=g_summary)
+                st.write("*Extracted answer (from summary):*")
+                st.write(rt_sum_answer)
+                st.write("*Extracted question:*")
+                st.write(rt_question)
+                st.write("*Extracted answer to question (from document):*")
+                st.write(rt_doc_answer)
+                
 
     st.subheader("Source Document")
     st.write(selected_data["document"])
