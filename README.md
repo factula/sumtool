@@ -11,6 +11,9 @@ A toolkit for understanding factuality & consistency errors in summarization mod
 - - Search for common factuality errors across your dataset (i.e. find all numerical errors)
 - - Explore faithfulness & factuality annotations (if available)
 
+- An interactive query interface for ngram lookup
+- - search for a ngram query from the dataset 
+
 ## References
 
 [References](reference.md)
