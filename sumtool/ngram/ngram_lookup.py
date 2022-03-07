@@ -1,4 +1,5 @@
 import string
+import math
 import regex as rx
 from os.path import exists
 
@@ -14,6 +15,14 @@ import pyarrow.parquet as pq
 from microdict import mdict
 
 from .dictionary import Dictionary
+from enum import Enum
+
+
+class LookupCase(Enum):
+    no_query_given = 0
+    unk_in_query = 1
+    match_not_found = 2
+    match_found = 3
 
 
 def preprocess(text):
@@ -46,6 +55,18 @@ class NgramLookup:
         self.dictionary = Dictionary()
         self.unk_idx = 0
         self.ngrams_root = {}
+
+        # key to build ngram int id
+        self.MAX = self._generate_int_key(self.tokenizer.vocab_size)
+
+    def _generate_int_key(self, x):
+        # check if x is power of 10
+        if (10 ** math.log(x, 10)) == x:
+            return x
+        else:
+            digit = len(str(x))
+            x -= x % -(10 ** digit)
+            return x
 
     def build_dictionary(self, vocabs_path, max_vocab_size, save_flag=True):
         """
@@ -118,8 +139,6 @@ class NgramLookup:
         # list of document ids for idx
         doc_table = []
 
-        MAX = self.dictionary.idx
-
         for doc_idx, doc in enumerate(tqdm(self.documents)):
             indices = [self.dictionary.get_idx_by_wrd(word) for word in doc.split()]
 
@@ -129,10 +148,10 @@ class NgramLookup:
                     start = 0
                     continue
 
-                start = start % (MAX ** (n - 1))
-                start = MAX * start + word_idx
+                start = start % (self.MAX ** (n - 1))
+                start = self.MAX * start + word_idx
 
-                if start < (MAX ** (n - 1)):
+                if start < (self.MAX ** (n - 1)):
                     # print("too early, continue")
                     continue
 
@@ -221,12 +240,10 @@ class NgramLookup:
         if any(idx == self.dictionary.get_unk_idx() for idx in query_idx):
             return {"case": 1, "match": []}
 
-        MAX = self.dictionary.idx
-
         ngram_int = 0
         # ngram_int = query_idx[0] * (MAX ** 2) + query_idx[1] * (MAX ** 1) + query_idx[2] * (MAX ** 0)
         for i, idx in enumerate(query_idx):
-            ngram_int += idx * (MAX ** (n - 1 - i))
+            ngram_int += idx * (self.MAX ** (n - 1 - i))
 
         df = self.ngrams_root[n].to_pandas()
 
