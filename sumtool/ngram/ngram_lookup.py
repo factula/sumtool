@@ -65,7 +65,7 @@ class NgramLookup:
             return x
         else:
             digit = len(str(x))
-            x -= x % -(10 ** digit)
+            x -= x % -(10**digit)
             return x
 
     def build_dictionary(self, vocabs_path, max_vocab_size, save_flag=True):
