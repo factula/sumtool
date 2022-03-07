@@ -3,16 +3,8 @@ import streamlit as st
 
 from datasets import load_dataset
 from os.path import exists
-from enum import Enum
 
 from sumtool.ngram import NgramLookup, preprocess
-
-
-class Case(Enum):
-    no_query_given = 0
-    unk_in_query = 1
-    match_not_found = 2
-    match_found = 3
 
 
 @st.experimental_memo

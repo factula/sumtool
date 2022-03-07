@@ -3,12 +3,11 @@ import streamlit as st
 # from memory_profiler import profile
 from os.path import exists, dirname, realpath, join
 
-from sumtool.ngram import preprocess
+from sumtool.ngram import preprocess, LookupCase
 from backend.viz_ngram_loader import (
     load_xsum_dataset,
     load_ngram_lookup,
     build_ngram_lookup,
-    Case,
 )
 
 # parameters
@@ -71,9 +70,9 @@ def render_ngram_interface():
 
     # write results
     st.write("**Search result:**")
-    if case == Case.no_query_given.value:
+    if case == LookupCase.no_query_given.value:
         st.write("No query given")
-    elif case == Case.unk_in_query.value:
+    elif case == LookupCase.unk_in_query.value:
         st.write("Unknown word in query")
     else:
         results = [

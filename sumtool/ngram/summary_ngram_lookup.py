@@ -1,10 +1,10 @@
-from collections import defaultdict
-from os.path import exists
+import math
 
 from tqdm import tqdm  # progress bar
-
+from os.path import exists
 from os.path import dirname, realpath, join
 from datasets import load_dataset
+from collections import defaultdict
 
 import threading
 
@@ -12,20 +12,20 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from microdict import mdict
 
-# newly added for ngram-summary-lookup
 from transformers import BartTokenizer
+from sumtool.ngram import LookupCase
 
 
 def load_tokenizer():
     return BartTokenizer.from_pretrained("facebook/bart-large-xsum")
 
 
-class NgramSummaryLookup:
+class SummaryNgramLookup:
     def __init__(self, documents, tokenizer):
         """
         Args:
             documents: A list of documents to build ngram upon
-            tokenizer: TODO
+            tokenizer: A PreTrainedTokenizer(), now using 'facebook/bart-large-xsum'
         """
         self.documents = documents
 
@@ -34,7 +34,17 @@ class NgramSummaryLookup:
         self.ngrams_root = {}
 
         # key to build ngram int id
-        self.MAX = round(self.tokenizer.vocab_size, -5)  # bart tokenizer size is 50265
+        # bart tokenizer size is 50265 - digit is 5, self.MAX = 10^5
+        self.MAX = self._generate_int_key(self.tokenizer.vocab_size)  # 100000
+
+    def _generate_int_key(self, x):
+        # check if x is power of 10
+        if (10 ** math.log(x, 10)) == x:
+            return x
+        else:
+            digit = len(str(x))
+            x -= x % -(10**digit)
+            return x
 
     def build_ngram_dictionary(self, ngram_path, min_n, max_n, save_flag=True):
         """
@@ -62,12 +72,11 @@ class NgramSummaryLookup:
             len(self.ngrams_root[n]) for n in range(min_n, max_n + 1)
         ), "ngram dictionaries are not built"
 
-    def build_ngrams(self, n):  # now just bigram
+    def build_ngrams(self, n):
         """
         Generate ngrams from the given dictionary and store them in a pyarrow.Table
 
         Args:
-            tokenizer: A PreTrainedTokenizer(), now using 'facebook/bart-large-xsum'
             n: An integer, the rank of the grams that are generated
         """
 
@@ -85,9 +94,6 @@ class NgramSummaryLookup:
 
         for doc_idx, doc in enumerate(tqdm(self.documents)):
             indices = self.tokenizer.encode(doc, add_special_tokens=False)
-
-            # print(indices)
-            # print(type(indices))
 
             start = 0
             for word_idx in indices:
@@ -160,65 +166,71 @@ class NgramSummaryLookup:
         # save as parquet file
         pq.write_table(self.ngrams_root[n], file_path)
 
-    def lookup(self, query_idx, df):
+    def lookup(self, query_idx, ngram_df):
         """
-        lookup given query from ngram dictionary (pandas dataframe)
+        lookup given query from ngram table (pa.DataFrame)
 
         Args:
             query_idx: A list of query indices
-            df: pa.Dataframe, TODO
+            ngram_df: pa.DataFrame, ngram table
 
-        Returns: TODO
-            A dictionary of {"case": int, "match": list}
-            - case: which category given query belongs to
-            - match: a list of matched document indices, empty if no match
+        Returns:
+            A Dictionary of {"ngram": Tuple, "case": int, "match": List}
+            - ngram: a tuple of word indices
+            - case: (one of the values of LookupCase), which category given query belongs to
+            - match: list of matched document indices, empty if no match
         """
-
         n = len(query_idx)
 
         # Case 0: return if no query given
         if n == 0:
-            return {"case": 0, "match": []}
+            return {"case": LookupCase.no_query_given.value, "match": []}
 
         # Case 1: return if query includes <unk>
         if any(idx == self.unk_idx for idx in query_idx):
-            return {"case": 1, "match": []}
+            return {"case": LookupCase.unk_in_query.value, "match": []}
 
         ngram_int = 0
         # ngram_int = query_idx[0] * (MAX ** 2) + query_idx[1] * (MAX ** 1) + query_idx[2] * (MAX ** 0)
         for i, idx in enumerate(query_idx):
             ngram_int += idx * (self.MAX ** (n - 1 - i))
 
-        matched_doc_idx = df.loc[df["ngram"] == ngram_int, "doc_idx_list"]
+        matched_doc_idx = ngram_df.loc[ngram_df["ngram"] == ngram_int, "doc_idx_list"]
 
         if len(matched_doc_idx) == 0:
             # Case 2: all words are in vocabs but no match found
-            return {"case": 2, "match": []}
+            return {"case": LookupCase.match_not_found.value, "match": []}
         else:
             # Case 3: match found- return matched document indices
-            return {"case": 3, "match": list(matched_doc_idx.item())}
+            return {
+                "case": LookupCase.match_found.value,
+                "match": list(matched_doc_idx.item()),
+            }
 
     def lookup_summary_from_dataset(self, summary, n):
         """
         lookup given summary from the whole training dataset
 
         Args:
-            summary: A String, generated summary
-            n:
+            summary: A String, summary generated from the document
+            n: An integer, the rank of the grams that are generated
 
-        Returns: TODO
-            A dictionary of {"case": int, "match": list}
-            - case: which category given query belongs to
-            - match: a list of matched document indices, empty if no match
+        Returns:
+            A List of dictionaries
+            Dictionary: {"ngram": Tuple, "case": int, "match": List}
+            - ngram: a tuple of word indices
+            - case: (one of the values of LookupCase), which category given query belongs to
+            - match: list of matched document indices, empty if no match
         """
         print("Looking up summary ngrams from the training set")
         summary_indices = self.tokenizer.encode(summary, add_special_tokens=False)
 
-        df = self.ngrams_root[n].to_pandas()
+        ngram_df = self.ngrams_root[n].to_pandas()
 
         result_dict_list = []
-        for summary_ngram in zip(summary_indices, summary_indices[1:]):  # only bigram
-            result_dict = self.lookup(summary_ngram, df)
+        sum_ngrams = [summary_indices[k:] for k in range(n)]
+        for summary_ngram in zip(*sum_ngrams):
+            result_dict = self.lookup(summary_ngram, ngram_df)
             result_dict_list.append(
                 {
                     "ngram": summary_ngram,
@@ -235,21 +247,25 @@ class NgramSummaryLookup:
         Args:
             summary: A String, summary generated from the document
             document: A String
+            n: An integer, the rank of the grams that are generated
 
-        Returns: TODO
-            A dictionary of {"case": int, "match": list}
-            - case: which category given query belongs to
-            - match: a list of matched document indices, empty if no match
+        Returns:
+            A List of dictionaries
+            Dictionary: {"ngram": Tuple, "case": int, "match_count": int}
+            - ngram: a tuple of word indices
+            - case: (one of the values of LookupCase), which category given query belongs to
+            - match_count: number of matched ngrams in the document, 0 if no match
         """
         print("Looking up summary ngrams from the given document")
         summary_indices = self.tokenizer.encode(summary, add_special_tokens=False)
         document_indices = self.tokenizer.encode(document, add_special_tokens=False)
 
-        # TODO: add word idx to document_ngram_dict?, now add count
         document_ngram_dict = defaultdict(set)
-        for document_ngram in zip(
-            document_indices, document_indices[1:]
-        ):  # only bigram
+        doc_ngrams = [
+            document_indices[k:] for k in range(n)
+        ]  # [document_indices, document_indices[1:]]
+
+        for document_ngram in zip(*doc_ngrams):
             if document_ngram in document_ngram_dict:
                 document_ngram_dict[document_ngram] += 1
             else:
@@ -257,76 +273,71 @@ class NgramSummaryLookup:
 
         # print(document_ngram_dict)
 
-        result_dict_list = []  # return count
-        for summary_ngram in zip(summary_indices, summary_indices[1:]):  # only bigram
+        result_dict_list = []
+        sum_ngrams = [summary_indices[k:] for k in range(n)]
+
+        for summary_ngram in zip(*sum_ngrams):
             # Case 1: return if query includes <unk>
             if any(idx == self.unk_idx for idx in summary_ngram):
                 result_dict_list.append(
-                    {"ngram": summary_ngram, "case": 1, "match": []}
+                    {
+                        "ngram": summary_ngram,
+                        "case": LookupCase.unk_in_query.value,
+                        "match_count": 0,
+                    }
                 )
                 continue
 
             # Case 2: all words are in vocabs but no match found
             if summary_ngram not in document_ngram_dict:
                 result_dict_list.append(
-                    {"ngram": summary_ngram, "case": 2, "match": []}
+                    {
+                        "ngram": summary_ngram,
+                        "case": LookupCase.match_not_found.value,
+                        "match_count": 0,
+                    }
                 )
             else:
                 # Case 3: match found- return matched document indices
                 result_dict_list.append(
                     {
                         "ngram": summary_ngram,
-                        "case": 3,
-                        "match": document_ngram_dict[summary_ngram],
+                        "case": LookupCase.match_found.value,
+                        "match_count": document_ngram_dict[summary_ngram],
                     }
                 )
         return result_dict_list
 
 
-# @profile
 def main():
     CURRENT_PATH = dirname(realpath(__file__))  # current file path
-    NGRAM_PATH = join(CURRENT_PATH, "cache_bart_tokenizer/ngram_dict_%d")
-    MIN_N = 2
-    MAX_N = 2  # just bigram
-    SAVE_FLAG = True
+    NGRAM_PATH = join(
+        CURRENT_PATH, "cache_bart_tokenizer/ngram_dict_%d"
+    )  # file path to save ngram dictionary
+    MIN_N = MAX_N = 2  # just bigram
+    SAVE_FLAG = True  # whether to save ngram dictionary
 
     # TODO: replace it with sumtool
     x_sum_dataset = load_dataset("xsum")
-    # test_dataset = x_sum_dataset["test"]
     x_sum_dataset = x_sum_dataset["train"]
 
-    # TODO: put tokenizer into NgramLookup?
     tokenizer = load_tokenizer()
 
-    # TODO: how to tokenize?, now 2
-    # 1. store encoded document to x_sum_dataset and pass it to ngram_lookup.documents
-    # 2. pass the whole document to ngram_lookup and encode with internal for loop
-
-    # for train_data in x_sum_dataset:
-    #     doc = train_data["document"]
-    #     wrd_idx_list = tokenizer.encode(doc, add_special_tokens=False)
-
-    # Preprocess documents
-    # print("Tokenizing documents...")
-    # x_sum_dataset = x_sum_dataset.map(
-    #     lambda example: {"pp_document": preprocess(example["document"])}, num_proc=5
-    # )
-
     # ngram lookup
-    ngram_lookup = NgramSummaryLookup(
+    ngram_summary_lookup = SummaryNgramLookup(
         documents=x_sum_dataset["document"], tokenizer=tokenizer
     )
 
     # build ngram dictionary with multithreading
-    p2 = threading.Thread(
-        target=ngram_lookup.build_ngram_dictionary,
+    # if ngram dictionary exists, load it
+    p = threading.Thread(
+        target=ngram_summary_lookup.build_ngram_dictionary,
         args=(NGRAM_PATH, MIN_N, MAX_N, SAVE_FLAG),
     )
-    p2.start()
-    p2.join()
+    p.start()
+    p.join()
 
-    # this has to be moved to interface
+    # lookup example
     document = (
         "Prison Link Cymru had 1,099 referrals in 2015-16 and said some ex-offenders were living rough for up "
         "to a year before finding suitable accommodation.\nWorkers at the charity claim investment in housing "
@@ -368,15 +379,30 @@ def main():
     )
     summary = 'There is a "chronic" need for more housing for prison leavers in Wales, according to a charity.'
 
-    summary_from_dataset = ngram_lookup.lookup_summary_from_dataset(summary, n=2)
-    summary_from_document = ngram_lookup.lookup_summary_from_document(
-        summary, document, n=2
-    )  # only bigram
+    # lookup summary from training set
+    # summary_from_dataset is a list of dictionaries
+    # Dictionary: {"ngram": Tuple, "case": int, "match": List}
+    #     - ngram: a tuple of word indices
+    #     - case: (one of the values of LookupCase), which category given query belongs to
+    #     - match: list of matched document indices, empty if no match
+    summary_from_dataset = ngram_summary_lookup.lookup_summary_from_dataset(
+        summary, n=2
+    )
 
-    # print(summary_from_dataset) # too long to print
-    # for l in summary_from_dataset:
-    #     print(l["ngram"], l["case"], len(l["match"]))
-    # print(summary_from_document)
+    # lookup summary from the document
+    # summary_from_document is a List of dictionaries
+    # Dictionary: {"ngram": Tuple, "case": int, "match_count": int}
+    #     - ngram: a tuple of word indices
+    #     - case: (one of the values of LookupCase), which category given query belongs to
+    #     - match_count: number of matched ngrams in the document, 0 if no match
+    summary_from_document = ngram_summary_lookup.lookup_summary_from_document(
+        summary, document, n=2
+    )
+
+    # print lookup results
+    for result_dict in summary_from_dataset:
+        print(result_dict["ngram"], result_dict["case"], len(result_dict["match"]))
+    print(summary_from_document)
 
 
 if __name__ == "__main__":
