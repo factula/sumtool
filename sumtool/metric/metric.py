@@ -1,5 +1,28 @@
-import bert_score
+import bert_scoreimport os
+import sys
+import time
+import pathlib
+import torch
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import numpy as np
+import pandas as pd
+
+from collections import defaultdict
+from transformers import AutoTokenizer
 from rouge_score import rouge_scorer
+from bert_score.utils import (
+    get_model,
+    get_tokenizer,
+    get_idf_dict,
+    bert_cos_score_idf,
+    get_bert_embedding,
+    lang2model,
+    model2layers,
+    get_hash,
+    cache_scibert,
+    sent_encode,
+)
 
 
 def score_each(hyps, refs, metric="bertscore", model_type="microsoft/deberta-xlarge-mnli"):
@@ -54,6 +77,66 @@ def score(hyps, ref, metric="bertscore", model_type="microsoft/deberta-xlarge-mn
     """
     refs = [ref] * len(hyps)
     return score_each(hyps, refs, metric, model_type)
+
+def bert_score_matrix(
+    candidate,
+    reference,
+    model_type=None,
+    num_layers=None,
+    lang=None,
+    rescale_with_baseline=False,
+    use_fast_tokenizer=False,
+):
+    """
+    Compute the bert score or rough score for hypothesis and reference pairs.
+
+    Args:
+        candidate: a candidate of model generated results,
+        reference: golden summary,
+        model_type: model type,
+        num_layers: layers of the model to be used for embeddings,
+        lang: language,
+        rescale_with_baseline=False,
+        use_fast_tokenizer: fast tokenizer approach from bert score,
+    Returns:
+         sim, len(r_tokens), len(h_tokens)
+    """
+    if rescale_with_baseline:
+        assert lang is not None, "Need to specify Language when rescaling with baseline"
+
+    if model_type is None:
+        lang = lang.lower()
+        model_type = lang2model[lang]
+    if num_layers is None:
+        num_layers = model2layers[model_type]
+
+    tokenizer = get_tokenizer(model_type, use_fast_tokenizer)
+    model = get_model(model_type, num_layers)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model.to(device)
+
+    idf_dict = defaultdict(lambda: 1.0)
+    # set idf for [SEP] and [CLS] to 0
+    idf_dict[tokenizer.sep_token_id] = 0
+    idf_dict[tokenizer.cls_token_id] = 0
+
+    hyp_embedding, masks, padded_idf = get_bert_embedding(
+        [candidate], model, tokenizer, idf_dict, device=device, all_layers=False
+    )
+    ref_embedding, masks, padded_idf = get_bert_embedding(
+        [reference], model, tokenizer, idf_dict, device=device, all_layers=False
+    )
+    ref_embedding.div_(torch.norm(ref_embedding, dim=-1).unsqueeze(-1))
+    hyp_embedding.div_(torch.norm(hyp_embedding, dim=-1).unsqueeze(-1))
+    sim = torch.bmm(hyp_embedding, ref_embedding.transpose(1, 2))
+    sim = sim.squeeze(0).cpu()
+
+    # remove [CLS] and [SEP] tokens
+    r_tokens = [tokenizer.decode([i]) for i in sent_encode(tokenizer, reference)][1:-1]
+    h_tokens = [tokenizer.decode([i]) for i in sent_encode(tokenizer, candidate)][1:-1]
+    sim = sim[1:-1, 1:-1]
+
+    return sim, len(r_tokens), len(h_tokens)
 
 
 def visualize_bert_score(hyps, ref, rescale_with_baseline=True, model_type="microsoft/deberta-xlarge-mnli"):
