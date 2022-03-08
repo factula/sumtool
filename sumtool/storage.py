@@ -17,11 +17,19 @@ def model_path(dataset: str, model: str, ext):
 
 def slugify(value, allow_unicode=False):
     """
+    For a given string convert slashes, spaces or repeated dashes to single dashes.
+    Removes characters that aren't alphanumerics, underscores, or hyphens.
+    Converts to lowercase.
+    Strip leading and trailing whitespace, dashes, and underscores.
+
     Taken from https://github.com/django/django/blob/master/django/utils/text.py
-    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
-    dashes to single dashes. Remove characters that aren't alphanumerics,
-    underscores, or hyphens. Convert to lowercase. Also strip leading and
-    trailing whitespace, dashes, and underscores.
+
+    Args:
+        value: the string to slugify
+        allow_unicode: Convert to ASCII if 'allow_unicode' is False.
+
+    Returns:
+        the slugified strin
     """
     value = str(value).replace("/", "-")
     if allow_unicode:
@@ -114,7 +122,7 @@ def store_summary_metrics(
     """
     Stores summary metrics, indexed by dataset, model, model config hash & document id
 
-    If the storage already has metrics for this document id and model config, 
+    If the storage already has metrics for this document id and model config,
     it will update similar to a PUT request.
     Otherwise metrics are appended to the storage.
 
