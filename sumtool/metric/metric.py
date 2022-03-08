@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 import pandas as pd
-
 from collections import defaultdict
 from transformers import AutoTokenizer
 from rouge_score import rouge_scorer
@@ -23,7 +22,6 @@ from bert_score.utils import (
     cache_scibert,
     sent_encode,
 )
-
 
 def score_each(hyps, refs, metric="bertscore", model_type="microsoft/deberta-xlarge-mnli"):
     """
@@ -60,7 +58,6 @@ def score_each(hyps, refs, metric="bertscore", model_type="microsoft/deberta-xla
         return precisions, recalls, fmeasures
     else:
         raise ValueError('Metric is not implemented.')
-
 
 def score(hyps, ref, metric="bertscore", model_type="microsoft/deberta-xlarge-mnli"):
     """
@@ -137,7 +134,6 @@ def bert_score_matrix(
     sim = sim[1:-1, 1:-1]
 
     return sim, len(r_tokens), len(h_tokens)
-
 
 def visualize_bert_score(hyps, ref, rescale_with_baseline=True, model_type="microsoft/deberta-xlarge-mnli"):
     """
