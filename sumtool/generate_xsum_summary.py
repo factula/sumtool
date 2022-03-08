@@ -2,6 +2,7 @@ import argparse
 import torch
 import datasets
 from typing import List, Tuple
+from sumtool.utils import entropy
 from sumtool.xsum_dataset import XsumDataset
 from sumtool.storage import store_model_summaries
 from transformers import BartTokenizer, BartForConditionalGeneration
@@ -29,7 +30,9 @@ def generate_summaries(
     model: BartForConditionalGeneration,
     tokenizer: BartTokenizer,
     docs_to_summarize: List[str],
-) -> str:
+    num_beams: int = 4,
+    return_generation_metadata: bool = False
+):
     """
     Given a trained summary generation model and appropriate tokenizer,
 
@@ -41,6 +44,8 @@ def generate_summaries(
         model: model to run inference on
         tokenizer: tokenizer corresponding to model
         docs_to_summarize: documents to summarize
+        num_beams: number of beams for beam search
+        return_generation_metadata: whether generation metadata should be returned
 
     Returns:
         decoded_sentence
@@ -54,21 +59,54 @@ def generate_summaries(
     )
     input_token_ids = inputs.input_ids.to(device)
 
-    summary_ids = model.generate(
+    model_output = model.generate(
         input_token_ids,
-        num_beams=4,
+        num_beams=num_beams,
         max_length=150,
         early_stopping=True,
+        return_dict_in_generate=True,
+        output_scores=True,
     )
 
     generated_summaries = [
         tokenizer.decode(
             id, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )
-        for id in summary_ids
+        for id in model_output.sequences
     ]
 
-    return generated_summaries
+    if not return_generation_metadata:
+        return generated_summaries
+    else:
+        token_metadata = []
+        input_set = input_token_ids.view(-1).tolist()
+        for seq_idx in range(model_output.sequences.shape[0]):
+            seq_metadata = []
+            token_metadata.append(seq_metadata)
+            for idx, output_token_id in enumerate(model_output.sequences[seq_idx][1:]):
+                beam_idx = model_output.beam_indices[seq_idx][idx]
+                selected_beam_probs = torch.exp(model_output.scores[idx][beam_idx])
+
+                beam_top_alternatives = []
+                top_probs = torch.topk(selected_beam_probs, k=3)
+                for i, v in zip(top_probs.indices, top_probs.values):
+                    beam_top_alternatives.append({
+                        "token": tokenizer.decode(i),
+                        "token_id": i.item(),
+                        "beam_token_prob": v.item()
+                    })
+
+                seq_metadata.append({
+                    "token_id": output_token_id,
+                    "token": tokenizer.decode(output_token_id),
+                    "entropy": entropy(selected_beam_probs).item(),
+                    "beam_token_prob": selected_beam_probs[output_token_id].item(),
+                    "beam_idx": beam_idx.item(),
+                    "beam_top_probs": beam_top_alternatives,
+                    "token_in_input": output_token_id in input_set,
+                })
+
+        return generated_summaries, token_metadata
 
 
 if __name__ == "__main__":
@@ -98,14 +136,31 @@ if __name__ == "__main__":
     xsum_data = XsumDataset(datasets.load_dataset("xsum")[args.data_split])
     selected_data = [xsum_data.data_by_id[x.strip()] for x in args.bbc_ids.split(",")]
 
-    summaries = generate_summaries(
-        model, tokenizer, [x["document"] for x in selected_data]
+    summaries, generation_metadata = generate_summaries(
+        model,
+        tokenizer,
+        [x["document"] for x in selected_data],
+        num_beams=4,
+        return_generation_metadata=True
     )
 
-    for source, gen_summary in zip(selected_data, summaries):
+    summary_metadata = {}
+
+    for source, gen_summary, seq_metadata in zip(selected_data, summaries, generation_metadata):
         print("XSUM ID", source["id"])
         print("GOLD STANDARD SUMMARY:", source["true_summary"])
         print("PREDICTED SUMMARY:", gen_summary)
+
+        tokens_with_entropy = []
+        for token_metadata in seq_metadata:
+            tokens_with_entropy.append((
+                token_metadata["token"],
+                token_metadata["entropy"]
+            ))
+
+        summary_metadata[source["id"]] = {
+            "tokens_with_entropy": tokens_with_entropy
+        }
 
     store_model_summaries(
         "xsum",
@@ -115,4 +170,5 @@ if __name__ == "__main__":
             source["id"]: gen_summary
             for source, gen_summary in zip(selected_data, summaries)
         },
+        summary_metadata
     )
