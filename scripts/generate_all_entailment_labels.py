@@ -73,8 +73,6 @@ if __name__ == "__main__":
         entailment_metrics = []
 
         for batch_idx, batch in enumerate(tqdm(data_loader)):
-            if batch_idx == 2:
-                break
             batch_tokenized = tokenizer(
                 batch["document"],
                 batch["summary"],
