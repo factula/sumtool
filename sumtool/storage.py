@@ -15,7 +15,7 @@ def model_path(dataset: str, model: str, ext):
     return f"{dataset_dir(dataset)}/{slugify(model)}-{ext}"
 
 
-def slugify(value, allow_unicode=False):
+def slugify(value: str, allow_unicode: bool = False):
     """
     For a given string convert slashes, spaces or repeated dashes to single dashes.
     Removes characters that aren't alphanumerics, underscores, or hyphens.
@@ -29,7 +29,7 @@ def slugify(value, allow_unicode=False):
         allow_unicode: Convert to ASCII if 'allow_unicode' is False.
 
     Returns:
-        the slugified strin
+        the slugified string
     """
     value = str(value).replace("/", "-")
     if allow_unicode:

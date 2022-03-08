@@ -5,7 +5,6 @@ import pandas as pd
 
 cache_summaries = storage.get_summaries("xsum", "facebook-bart-large-xsum")
 cache_keys = cache_summaries.keys()
-st.write()
 annotated_data_by_id = load_annotated_data_by_id()
 filtered_annotated_data_by_id = {
     k: annotated_data_by_id[k]
