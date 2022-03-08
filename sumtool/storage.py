@@ -109,12 +109,13 @@ def store_model_summaries(
 def store_summary_metrics(
     dataset: str,
     model: str,
-    summary_metrics: Dict[str, Dict[str, float]],
+    summary_metrics: Dict[str, Dict[str, Any]],
 ):
     """
     Stores summary metrics, indexed by dataset, model, model config hash & document id
 
-    If the storage already has metrics for this document id and model config, it will overwrite it.
+    If the storage already has metrics for this document id and model config, 
+    it will update similar to a PUT request.
     Otherwise metrics are appended to the storage.
 
     Ex. /data/bert-base-metrics.json
@@ -124,6 +125,9 @@ def store_summary_metrics(
             "<document-id>": {
                 "bert-score": 0.5,
                 "rouge-score": 0.5,
+                "entailment": {
+                    ...
+                }
             }
         }
     }
@@ -145,8 +149,12 @@ def store_summary_metrics(
         with open(path, "r") as f:
             stored_summaries = json.load(f)
 
-    for document_id, metrics in summary_metrics.items():
-        stored_summaries[document_id] = metrics
+    for document_id, updated_metrics in summary_metrics.items():
+        if document_id in summary_metrics:
+            for key, value in updated_metrics.items():
+                stored_summaries[document_id][key] = value
+        else:
+            stored_summaries[document_id] = updated_metrics
 
     with open(path, "w") as f:
         f.write(json.dumps(stored_summaries, indent=2))
