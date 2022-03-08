@@ -1,20 +1,17 @@
 import streamlit as st
-from sumtool import generate_xsum_summary, storage
+from sumtool import storage
 from backend.viz_data_loader import load_annotated_data_by_id
 import pandas as pd
 
 cache_summaries = storage.get_summaries("xsum", "facebook-bart-large-xsum")
-cache_summary_values = [*cache_summaries.values()][0]
-cache_keys = [x for x in [*cache_summary_values.keys()]]
+cache_keys = cache_summaries.keys()
+st.write()
 annotated_data_by_id = load_annotated_data_by_id()
 filtered_annotated_data_by_id = {
-    k: annotated_data_by_id[k] for k in cache_keys if k in annotated_data_by_id
+    k: annotated_data_by_id[k]
+    for k in cache_summaries.keys()
+    if k in annotated_data_by_id
 }
-
-
-@st.experimental_singleton
-def cache_load_summarization_model_and_tokenizer():
-    return generate_xsum_summary.load_summarization_model_and_tokenizer()
 
 
 def render_model_interface():
@@ -41,7 +38,7 @@ def render_model_interface():
     st.write(g_summary)
 
     # Output summarization
-    predicted_summary = cache_summary_values[selected_id]["summary"][0]
+    predicted_summary = cache_summaries[selected_id]["summary"][0]
     st.subheader("Predicted Summary")
     st.write(predicted_summary)
 

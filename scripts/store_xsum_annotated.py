@@ -46,7 +46,7 @@ if __name__ == "__main__":
     for model_name, generated_summaries in persisted_summaries_by_model.items():
         store_model_summaries(
             "xsum",
-            model_name,
+            "maynez-" + model_name,
             persisted_model_config,
             generated_summaries,
             persisted_metadata_by_model[model_name],

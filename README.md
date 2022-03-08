@@ -72,18 +72,12 @@ flake8 sumtool/ interface/ scripts/
    - by loading them from an external dataset/paper ([example](scripts/store_xsum_annotated.py))
 2. Compute summary metrics for stored summaries using sumtool.
 
-![Storage Diagram](storage-diagram.jpg)
-
-#### `/data/<dataset>/<model-name>-summaries.json`
+#### `/data/<dataset>/<model-i>-summaries.json`
+	<document_id>: 
+		summary: the generated summary,
+		metadata: ...metadata for the generated summary, i.e. annotations / score / entropy
 	
-	<model_config_hash>: an identifier for the model config that was used to generate these summaries
-		<document_id>: 
-	        summary: the generated summary,
-		    metadata: ...metadata for the generated summary, i.e. annotations / score / entropy
-        
       
-#### `/data/<dataset>/<model-name>-metrics.json`
-	
-	<model_config_hash>: an identifier for the model config that was used to generate these summaries
-		<document_id>: 
-            ...metrics for a stored summary, i.e. rouge-score, bert-score
+#### `/data/<dataset>/<model-id>-metrics.json`
+	<document_id>: 
+		...metrics for a stored summary, i.e. rouge-score, bert-score

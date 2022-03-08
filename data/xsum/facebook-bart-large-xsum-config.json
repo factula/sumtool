@@ -82,7 +82,7 @@
   "static_position_embeddings": false,
   "student_decoder_layers": null,
   "student_encoder_layers": null,
-  "sumtool_name": "facebook/bart-large-xsum",
+  "sumtool_id": "facebook-bart-large-xsum",
   "task_specific_params": {},
   "temperature": 1.0,
   "tie_encoder_decoder": false,
