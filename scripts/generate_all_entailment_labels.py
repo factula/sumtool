@@ -8,7 +8,7 @@ from sumtool.xsum_dataset import XsumDataset
 from typing import List, Tuple
 
 
-def load_entailment_model_and_tokenizer():
+def load_entailment_model_and_tokenizer(device):
     tokenizer = AutoTokenizer.from_pretrained("madlag/bert-large-uncased-mnli")
     model = AutoModelForSequenceClassification.from_pretrained(
         "madlag/bert-large-uncased-mnli"
@@ -51,7 +51,7 @@ def construct_entailment_data_for_model(
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    tokenizer, model = load_entailment_model_and_tokenizer()
+    tokenizer, model = load_entailment_model_and_tokenizer(device)
 
     xsum_test_by_id = XsumDataset(load_dataset("xsum")["test"]).data_by_id
 
