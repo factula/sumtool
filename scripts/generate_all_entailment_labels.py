@@ -81,14 +81,14 @@ if __name__ == "__main__":
                 truncation="only_first",
             ).to(device)
 
-            batch_entailment_probs = (
-                model(**batch_tokenized)["logits"]
-                .softmax(dim=1)
-                .cpu()
-                .detach()
-                .numpy()
-                .tolist()
-            )
+            with torch.no_grad():
+                batch_entailment_probs = (
+                    model(**batch_tokenized)["logits"]
+                    .softmax(dim=1)
+                    .cpu()
+                    .numpy()
+                    .tolist()
+                )
 
             batch_entailment_metric = [
                 dict(zip(["entails_prob", "neutral_prob", "contradicts_prob"], probs))
