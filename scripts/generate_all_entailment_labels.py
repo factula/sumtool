@@ -5,7 +5,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 import torch
 from datasets import load_dataset
 from sumtool.xsum_dataset import XsumDataset
-from typing import List, Tuple
+from typing import List
 
 
 def load_entailment_model_and_tokenizer(device):
@@ -18,7 +18,7 @@ def load_entailment_model_and_tokenizer(device):
 
 
 def construct_entailment_data_for_model(
-    xsum_examples_by_id: dict, model_info: Tuple[str, str]
+    xsum_examples_by_id: dict, model_id: str
 ) -> List[dict]:
     """
     Merges the main xsum dataset with the model and human generated summaries stored
@@ -26,14 +26,12 @@ def construct_entailment_data_for_model(
 
     Args:
         xsum_examples_by_id: xsum dataset keyed by bbcid
-        model_info: tuple of (model name, model hash) used to index into stored summaries
+        model_id: model id used to index into stored summaries
 
     Returns:
         list of dict of bbcid, xsum document and the summary produced by the model.
     """
-
-    model_name, model_hash = model_info
-    stored_summaries = get_summaries("xsum", model_name)[model_hash]
+    stored_summaries = get_summaries("xsum", model_id)
 
     data_to_load = []
 
@@ -55,19 +53,17 @@ if __name__ == "__main__":
 
     xsum_test_by_id = XsumDataset(load_dataset("xsum")["test"]).data_by_id
 
-    generated_summary_lookup = {
-        "BERTS2S": "2221cf6c3bad26c64a12417282dabf3c",
-        "TranS2S": "adaab4ed6990eeae0ea8e98c78a722fe",
-        "PtGen": "5641d358ff7a45cc65592938f1020675",
-        "TConvS2S": "dfadf4c1e1847488969892cc58be06c1",
-        "Gold": "dfd16d395e88b38829ff2d5b98743404",
-    }
+    model_ids = [
+        "maynez-berts2s",
+        "maynez-gold",
+        "maynez-ptgen",
+        "maynez-tconvs2s",
+        "maynez-trans2s",
+    ]
 
-    for model_name, model_hash in generated_summary_lookup.items():
-        print(f"Started: {model_name} summaries enailment probs")
-        data_to_load = construct_entailment_data_for_model(
-            xsum_test_by_id, (model_name, model_hash)
-        )
+    for model_id in model_ids:
+        print(f"Started: {model_id} summaries entailment probs")
+        data_to_load = construct_entailment_data_for_model(xsum_test_by_id, model_id)
         data_loader = DataLoader(data_to_load, batch_size=8)
 
         entailment_metrics = []
@@ -96,5 +92,5 @@ if __name__ == "__main__":
             ]
             entailment_metrics.extend(list(zip(batch["id"], batch_entailment_metric)))
 
-        store_summary_metrics("xsum", model_name, model_hash, dict(entailment_metrics))
-        print(f"Finished: {model_name} summaries enailment probs")
+        store_summary_metrics("xsum", model_id, dict(entailment_metrics))
+        print(f"Finished: {model_id} summaries enailment probs")
