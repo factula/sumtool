@@ -99,7 +99,7 @@ def generate_summaries(
                 seq_metadata.append({
                     "token_id": output_token_id,
                     "token": tokenizer.decode(output_token_id),
-                    "entropy": entropy(selected_beam_probs).item(),
+                    "entropy": entropy(selected_beam_probs),
                     "beam_token_prob": selected_beam_probs[output_token_id].item(),
                     "beam_idx": beam_idx.item(),
                     "beam_top_probs": beam_top_alternatives,
