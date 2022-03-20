@@ -158,7 +158,7 @@ def store_summary_metrics(
             stored_summaries = json.load(f)
 
     for document_id, updated_metrics in summary_metrics.items():
-        if document_id in summary_metrics:
+        if document_id in stored_summaries:
             for key, value in updated_metrics.items():
                 stored_summaries[document_id][key] = value
         else:
@@ -182,4 +182,9 @@ def get_models(dataset: str):
 
 def get_summaries(dataset: str, model: str):
     with open(f"{dataset_dir(dataset)}/{model}-summaries.json", "r") as f:
+        return json.load(f)
+
+
+def get_summary_metrics(dataset: str, model: str):
+    with open(f"{dataset_dir(dataset)}/{model}-metrics.json", "r") as f:
         return json.load(f)
